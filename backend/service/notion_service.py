@@ -6,7 +6,7 @@ load_dotenv()
 notion_token = os.getenv("NOTION_TOKEN")
 page_id = os.getenv("NOTION_PAGE_ID")
 
-notion = Client(auth=notion_token, timeout=30000)
+notion = Client(auth=notion_token, timeout_ms=30000)
 
 def buscar_pagina(id_alvo=None):
     try:
