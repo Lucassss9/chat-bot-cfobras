@@ -9,8 +9,8 @@ print(f"Notion respondeu! Tamanho do texto: {len(manual_da_obra)} caracteres.")
 
 duvida_user = "Como eu faço para cadastrar um novo funcionário para o EPI?"
 
-print("⏳ Passo 3: Chamando o Groq com a pergunta...")
+print("Passo 3: Chamando o Groq com a pergunta...")
 resposta = gerar_resposta(pergunta=duvida_user, texto_manual=manual_da_obra)
 
-print("🏆 Passo 4: Resposta final do Bot:")
+print("Passo 4: Resposta final do Bot:")
 print(resposta)
