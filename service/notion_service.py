@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from notion_client import Client
-from notion_client.helpers import iterate_paginated_api
 
 def buscar_pagina(id_alvo=None):
     
