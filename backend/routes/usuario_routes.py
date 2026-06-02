@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from service.usuario_service import cadastrar_usuario
+from service.usuario_service import cadastrar_usuario, login
 
 router = APIRouter()
 
@@ -15,4 +15,11 @@ def cadastrar(usuario: Usuario):
         usuario.nome,
         usuario.email,
         usuario.senha
+    )
+
+@router.post("/usuario/editar")
+def login(usuario: Usuario):
+    return login(
+        usuario.nome,
+        usuario.email,
     )
