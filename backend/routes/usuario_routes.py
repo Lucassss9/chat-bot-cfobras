@@ -18,7 +18,7 @@ def cadastrar(usuario: Usuario):
     )
 
 @router.post("/usuario/login")
-def login(usuario: Usuario):
+def fazer_login(usuario: Usuario):
     return login(
         usuario.nome,
         usuario.email,
