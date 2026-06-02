@@ -14,11 +14,13 @@ def gerar_resposta(pergunta, texto_manual):
             messages=[
                 {
                     "role": "system",
-                    "content": f"Você é um assistente de IA que responde perguntas com base em um texto fornecido em {texto_manual}. Use apenas as informações do texto para responder às perguntas. Se a resposta não estiver no texto, diga que não sabe."
+                    "content": "Você é um assistente do sistema CF Obras. "
+                               "Responda SOMENTE usando as informações fornecidas no contexto. "
+                               "Se a resposta não estiver no contexto, responda exatamente: Não sei."
                 },
                 {
                     "role": "user",
-                    "content": pergunta
+                    "content": f"CONTEXTO: {texto_manual} - PERGUNTA: {pergunta}"
                 }
             ]
         )
