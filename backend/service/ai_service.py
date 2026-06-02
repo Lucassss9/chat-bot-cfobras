@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from groq import Groq
+from repository.pergunta_sem_resposta_repository import salvar
 
 def gerar_resposta(pergunta, texto_manual):
     load_dotenv()
@@ -24,7 +25,12 @@ def gerar_resposta(pergunta, texto_manual):
                 }
             ]
         )
+
+        resposta = chat.choices[0].message.content
+
+        if "Não sei" in resposta:
+            salvar(pergunta)
+
+        return resposta
     except:
         return "Desculpe, ocorreu um erro ao gerar a resposta. Por favor, tente novamente mais tarde."
-    
-    return chat.choices[0].message.content
