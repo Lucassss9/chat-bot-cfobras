@@ -4,17 +4,17 @@ from service.usuario_service import cadastrar_usuario, login
 
 router = APIRouter()
 
-class Usuario_Cadastro(BaseModel):
+class UsuarioCadastro(BaseModel):
     nome: str
     email: str
     senha: str
 
-class Usuario_Login(BaseModel):
+class UsuarioLogin(BaseModel):
     email: str
     senha: str
 
 @router.post("/usuario/cadastrar")
-def cadastrar(usuario: Usuario_Cadastro):
+def cadastrar(usuario: UsuarioCadastro):
     return cadastrar_usuario(
         usuario.nome,
         usuario.email,
@@ -22,7 +22,7 @@ def cadastrar(usuario: Usuario_Cadastro):
     )
 
 @router.post("/usuario/login")
-def fazer_login(usuario: Usuario_Login):
+def fazer_login(usuario: UsuarioLogin):
     return login(
         usuario.email,
         usuario.senha
