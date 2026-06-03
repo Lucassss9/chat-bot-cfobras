@@ -2,6 +2,7 @@ from model.usuario_model import Usuario
 from config.connection import session_local
 
 def salvar_usuario(nome, email, senha):
+    print(f"Salvando: {nome}, {email}")
     session = session_local()
 
     try:

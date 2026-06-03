@@ -1,653 +1,1547 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CF Obras — Central de Ajuda</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --navy:#042C53;--navy-2:#0C447C;--blue:#185FA5;--blue-2:#378ADD;--blue-light:#E6F1FB;--blue-border:#B5D4F4;
-  --gray-50:#F7F7F5;--gray-100:#EDEDEB;--gray-200:#DDDDD9;--gray-400:#9C9C97;--gray-600:#6B6B67;--gray-800:#3A3A38;--gray-900:#1E1E1D;
-  --green-bg:#EAF3DE;--green-text:#3B6D11;--green-border:#C0DD97;
-  --amber-bg:#FAEEDA;--amber-text:#854F0B;--amber-border:#FAC775;
-  --red-bg:#FCEBEB;--red-text:#A32D2D;--red-border:#F7C1C1;
-  --sidebar:244px;--radius:8px;--radius-lg:12px;
-  --font:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
-}
-html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--gray-50);color:var(--gray-900);-webkit-font-smoothing:antialiased}
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CF Obras — Central de Ajuda</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+          rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
 
-/* ── VIEWS ── */
-.view{display:none;height:100vh}
-.view.active{display:flex}
+        :root {
+            --navy: #042C53;
+            --navy-2: #0C447C;
+            --blue: #185FA5;
+            --blue-2: #378ADD;
+            --blue-light: #E6F1FB;
+            --blue-border: #B5D4F4;
+            --gray-50: #F7F7F5;
+            --gray-100: #EDEDEB;
+            --gray-200: #DDDDD9;
+            --gray-400: #9C9C97;
+            --gray-600: #6B6B67;
+            --gray-800: #3A3A38;
+            --gray-900: #1E1E1D;
+            --green-bg: #EAF3DE;
+            --green-text: #3B6D11;
+            --green-border: #C0DD97;
+            --amber-bg: #FAEEDA;
+            --amber-text: #854F0B;
+            --amber-border: #FAC775;
+            --red-bg: #FCEBEB;
+            --red-text: #A32D2D;
+            --red-border: #F7C1C1;
+            --sidebar: 244px;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --font: 'IBM Plex Sans', system-ui, sans-serif;
+            --mono: 'IBM Plex Mono', monospace;
+        }
 
-/* ── AUTH ── */
-#view-auth{align-items:center;justify-content:center;background:var(--navy)}
-.auth-card{background:#fff;border-radius:var(--radius-lg);padding:40px;width:100%;max-width:400px;margin:16px}
-.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
-.auth-logo-icon{width:40px;height:40px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
-.auth-logo-icon i{color:#fff;font-size:22px}
-.auth-logo-text{font-size:18px;font-weight:600;color:var(--navy)}
-.auth-logo-sub{font-size:12px;color:var(--gray-400)}
-.auth-title{font-size:20px;font-weight:600;color:var(--gray-900);margin-bottom:4px}
-.auth-sub{font-size:14px;color:var(--gray-600);margin-bottom:28px}
-.field{margin-bottom:16px}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.field input{width:100%;padding:10px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:14px;font-family:var(--font);color:var(--gray-900);background:var(--gray-50);outline:none;transition:border-color .15s,box-shadow .15s}
-.field input:focus{border-color:var(--blue-2);background:#fff;box-shadow:0 0 0 3px rgba(55,138,221,.1)}
-.btn-primary{width:100%;padding:11px;background:var(--blue);border:none;border-radius:var(--radius);color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
-.btn-primary:hover{background:var(--navy-2)}
-.auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--gray-600)}
-.auth-switch a{color:var(--blue);text-decoration:none;font-weight:500;cursor:pointer}
-.auth-switch a:hover{text-decoration:underline}
-.auth-error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red-text);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
-.auth-error.show{display:block}
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font);
+            background: var(--gray-50);
+            color: var(--gray-900);
+            -webkit-font-smoothing: antialiased
+        }
 
-/* ── APP ── */
-#view-app{overflow:hidden}
-.sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;overflow:hidden}
-.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
-.logo-icon{width:36px;height:36px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.logo-icon i{color:#fff;font-size:20px}
-.logo-text{color:#fff;font-size:15px;font-weight:600;line-height:1.2}
-.logo-sub{color:rgba(255,255,255,.38);font-size:11px}
-.sidebar-nav{flex:1;padding:10px 8px;overflow-y:auto}
-.nav-label{color:rgba(255,255,255,.28);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px 10px 4px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);color:rgba(255,255,255,.55);font-size:13.5px;cursor:pointer;transition:background .12s,color .12s;margin-bottom:1px;user-select:none}
-.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
-.nav-item.active{background:var(--blue);color:#fff}
-.nav-item i{font-size:17px;min-width:17px}
-.nav-badge{margin-left:auto;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:11px;font-weight:500;padding:1px 7px;border-radius:20px}
-.nav-item.active .nav-badge{background:rgba(255,255,255,.2);color:#fff}
-.sidebar-footer{padding:10px 8px 14px;border-top:1px solid rgba(255,255,255,.08)}
-.sidebar-user{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);cursor:pointer}
-.sidebar-user:hover{background:rgba(255,255,255,.07)}
-.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;flex-shrink:0}
-.user-name{color:rgba(255,255,255,.8);font-size:13px;font-weight:500}
-.user-role{color:rgba(255,255,255,.35);font-size:11px}
-.sidebar-user>i{color:rgba(255,255,255,.25);font-size:15px;margin-left:auto}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{height:52px;min-height:52px;padding:0 24px;border-bottom:1px solid var(--gray-200);background:#fff;display:flex;align-items:center;gap:10px}
-.topbar-icon{font-size:17px;color:var(--blue)}
-.topbar-title{font-size:14px;font-weight:600;color:var(--gray-900)}
-.topbar-sep{color:var(--gray-400)}
-.topbar-sub{font-size:13px;color:var(--gray-600)}
-.content{flex:1;overflow:hidden}
+        /* ── VIEWS ── */
+        .view {
+            display: none;
+            height: 100vh
+        }
 
-/* ── PANELS ── */
-.panel{height:100%;display:none;flex-direction:column}
-.panel.active{display:flex}
+        .view.active {
+            display: flex
+        }
 
-/* ── CHAT ── */
-.chat-messages{flex:1;overflow-y:auto;padding:28px 40px;display:flex;flex-direction:column;gap:18px;background:var(--gray-50)}
-.chat-messages::-webkit-scrollbar{width:4px}
-.chat-messages::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:2px}
-.welcome{margin:auto;text-align:center;max-width:420px;padding:40px 20px}
-.welcome-icon{width:60px;height:60px;background:var(--blue-light);border:1px solid var(--blue-border);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
-.welcome-icon i{font-size:28px;color:var(--blue)}
-.welcome h2{font-size:17px;font-weight:600;margin-bottom:8px}
-.welcome p{font-size:14px;color:var(--gray-600);line-height:1.65}
-.msg-row{display:flex;gap:10px;max-width:720px}
-.msg-row.user{flex-direction:row-reverse;margin-left:auto}
-.msg-avatar{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-top:18px;flex-shrink:0}
-.msg-avatar.ia{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-border)}
-.msg-avatar.user{background:var(--blue);color:#fff}
-.msg-body{display:flex;flex-direction:column;gap:3px;min-width:0}
-.msg-name{font-size:11px;font-weight:500;color:var(--gray-400);padding:0 2px}
-.msg-row.user .msg-name{text-align:right}
-.msg-bubble{padding:11px 15px;font-size:14px;line-height:1.7;background:#fff;border:1px solid var(--gray-200);border-radius:4px 12px 12px 12px;color:var(--gray-900);word-break:break-word}
-.msg-row.user .msg-bubble{background:var(--blue);border-color:var(--blue);color:#fff;border-radius:12px 4px 12px 12px}
-.typing-bubble{padding:12px 15px;background:#fff;border:1px solid var(--gray-200);border-radius:4px 12px 12px 12px;display:flex;gap:5px;align-items:center}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--gray-200);animation:blink 1.2s infinite}
-.dot:nth-child(2){animation-delay:.2s}
-.dot:nth-child(3){animation-delay:.4s}
-@keyframes blink{0%,80%,100%{opacity:.3;transform:scale(1)}40%{opacity:1;transform:scale(1.25)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.escalation-notice{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--amber-text);margin-top:6px;display:flex;align-items:center;gap:8px}
-.escalation-notice i{font-size:15px;flex-shrink:0}
-.chat-bottom{padding:14px 40px 18px;background:#fff;border-top:1px solid var(--gray-200)}
-.suggestions{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
-.chip{padding:5px 12px;border-radius:20px;font-size:12.5px;background:var(--gray-50);border:1px solid var(--gray-200);color:var(--gray-600);cursor:pointer;transition:all .12s;white-space:nowrap}
-.chip:hover{background:var(--blue-light);border-color:var(--blue-border);color:var(--navy-2)}
-.input-row{display:flex;align-items:flex-end;gap:10px}
-.input-wrap{flex:1;position:relative}
-.chat-input{width:100%;padding:10px 46px 10px 16px;border-radius:22px;border:1px solid var(--gray-200);background:var(--gray-50);font-size:14px;font-family:var(--font);color:var(--gray-900);resize:none;min-height:44px;max-height:120px;overflow-y:auto;outline:none;line-height:1.55;transition:border-color .15s,box-shadow .15s}
-.chat-input::placeholder{color:var(--gray-400)}
-.chat-input:focus{border-color:var(--blue-2);background:#fff;box-shadow:0 0 0 3px rgba(55,138,221,.1)}
-.send-btn{position:absolute;right:8px;bottom:7px;width:30px;height:30px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .1s}
-.send-btn:hover{background:var(--navy-2)}
-.send-btn:active{transform:scale(.94)}
-.send-btn i{color:#fff;font-size:14px}
-.input-hint{font-size:11px;color:var(--gray-400);text-align:center;margin-top:8px}
+        /* ── AUTH ── */
+        #view-auth {
+            align-items: center;
+            justify-content: center;
+            background: var(--navy)
+        }
 
-/* ── CADASTRO ── */
-.form-panel{flex:1;overflow-y:auto;padding:32px 40px;background:var(--gray-50)}
-.form-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:28px;max-width:640px}
-.form-card-title{font-size:16px;font-weight:600;color:var(--gray-900);margin-bottom:4px}
-.form-card-sub{font-size:13px;color:var(--gray-600);margin-bottom:24px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.form-grid .full{grid-column:1/-1}
-.form-field label{display:block;font-size:12px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.form-field input,.form-field select{width:100%;padding:10px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);font-size:14px;font-family:var(--font);color:var(--gray-900);background:var(--gray-50);outline:none;transition:border-color .15s,box-shadow .15s;appearance:none}
-.form-field input:focus,.form-field select:focus{border-color:var(--blue-2);background:#fff;box-shadow:0 0 0 3px rgba(55,138,221,.1)}
-.form-actions{margin-top:24px;display:flex;gap:10px}
-.btn-submit{padding:10px 24px;background:var(--blue);border:none;border-radius:var(--radius);color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s}
-.btn-submit:hover{background:var(--navy-2)}
-.btn-submit:disabled{opacity:.6;cursor:default}
-.btn-reset{padding:10px 18px;border:1px solid var(--gray-200);border-radius:var(--radius);background:#fff;font-family:var(--font);font-size:14px;color:var(--gray-600);cursor:pointer;transition:background .15s}
-.btn-reset:hover{background:var(--gray-50)}
-.form-success{background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:var(--green-text);margin-top:16px;display:none;align-items:center;gap:8px}
-.form-success.show{display:flex}
-.form-success i{font-size:16px;flex-shrink:0}
-.form-error-msg{background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:var(--red-text);margin-top:16px;display:none;align-items:center;gap:8px}
-.form-error-msg.show{display:flex}
+        .auth-card {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            margin: 16px
+        }
 
-/* ── ESCALAMENTOS ── */
-.esc-panel{flex:1;overflow-y:auto;padding:32px 40px;background:var(--gray-50)}
-.esc-header{margin-bottom:24px}
-.esc-header h2{font-size:16px;font-weight:600;color:var(--gray-900);margin-bottom:4px}
-.esc-header p{font-size:13px;color:var(--gray-600)}
-.esc-empty{text-align:center;padding:60px 20px;color:var(--gray-400)}
-.esc-empty i{font-size:48px;margin-bottom:12px;display:block}
-.esc-empty p{font-size:14px}
-.esc-list{display:flex;flex-direction:column;gap:10px}
-.esc-item{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;display:flex;align-items:flex-start;gap:14px}
-.esc-icon{width:38px;height:38px;min-width:38px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:50%;display:flex;align-items:center;justify-content:center}
-.esc-icon i{font-size:17px;color:var(--amber-text)}
-.esc-info{flex:1;min-width:0}
-.esc-question{font-size:14px;font-weight:500;color:var(--gray-900);margin-bottom:4px}
-.esc-meta{font-size:12px;color:var(--gray-400);font-family:var(--mono)}
-.esc-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--amber-bg);color:var(--amber-text);border:1px solid var(--amber-border);white-space:nowrap;flex-shrink:0}
-.esc-resolved{background:var(--green-bg);color:var(--green-text);border-color:var(--green-border)}
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px
+        }
 
-@media(max-width:900px){
-  :root{--sidebar:60px}
-  .logo-text,.logo-sub,.nav-label,.nav-item span,.nav-badge,.user-name,.user-role{display:none}
-  .sidebar-logo{justify-content:center;padding:16px 8px}
-  .nav-item{justify-content:center;padding:10px}
-  .sidebar-user{justify-content:center}
-  .chat-messages,.chat-bottom,.form-panel,.esc-panel{padding-left:16px;padding-right:16px}
-  .form-grid{grid-template-columns:1fr}
-  .form-grid .full{grid-column:1}
-}
-</style>
+        .auth-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--blue);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .auth-logo-icon i {
+            color: #fff;
+            font-size: 22px
+        }
+
+        .auth-logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--navy)
+        }
+
+        .auth-logo-sub {
+            font-size: 12px;
+            color: var(--gray-400)
+        }
+
+        .auth-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px
+        }
+
+        .auth-sub {
+            font-size: 14px;
+            color: var(--gray-600);
+            margin-bottom: 28px
+        }
+
+        .field {
+            margin-bottom: 16px
+        }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 6px
+        }
+
+        .field input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--gray-900);
+            background: var(--gray-50);
+            outline: none;
+            transition: border-color .15s, box-shadow .15s
+        }
+
+        .field input:focus {
+            border-color: var(--blue-2);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(55, 138, 221, .1)
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 11px;
+            background: var(--blue);
+            border: none;
+            border-radius: var(--radius);
+            color: #fff;
+            font-family: var(--font);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s
+        }
+
+        .btn-primary:hover {
+            background: var(--navy-2)
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--gray-600)
+        }
+
+        .auth-switch a {
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline
+        }
+
+        .auth-error {
+            background: var(--red-bg);
+            border: 1px solid var(--red-border);
+            color: var(--red-text);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none
+        }
+
+        .auth-error.show {
+            display: block
+        }
+
+        .auth-success {
+            background: var(--green-bg);
+            border: 1px solid var(--green-border);
+            color: var(--green-text);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none
+        }
+
+        .auth-success.show {
+            display: block
+        }
+
+        /* ── APP ── */
+        #view-app {
+            overflow: hidden
+        }
+
+        .sidebar {
+            width: var(--sidebar);
+            min-width: var(--sidebar);
+            background: var(--navy);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .sidebar-logo {
+            padding: 18px 16px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--blue);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .logo-icon i {
+            color: #fff;
+            font-size: 20px
+        }
+
+        .logo-text {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.2
+        }
+
+        .logo-sub {
+            color: rgba(255, 255, 255, .38);
+            font-size: 11px
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 10px 8px;
+            overflow-y: auto
+        }
+
+        .nav-label {
+            color: rgba(255, 255, 255, .28);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 10px 10px 4px
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            color: rgba(255, 255, 255, .55);
+            font-size: 13.5px;
+            cursor: pointer;
+            transition: background .12s, color .12s;
+            margin-bottom: 1px;
+            user-select: none
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, .07);
+            color: rgba(255, 255, 255, .85)
+        }
+
+        .nav-item.active {
+            background: var(--blue);
+            color: #fff
+        }
+
+        .nav-item i {
+            font-size: 17px;
+            min-width: 17px
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: rgba(255, 255, 255, .12);
+            color: rgba(255, 255, 255, .7);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 1px 7px;
+            border-radius: 20px
+        }
+
+        .nav-item.active .nav-badge {
+            background: rgba(255, 255, 255, .2);
+            color: #fff
+        }
+
+        .sidebar-footer {
+            padding: 10px 8px 14px;
+            border-top: 1px solid rgba(255, 255, 255, .08)
+        }
+
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            cursor: pointer
+        }
+
+        .sidebar-user:hover {
+            background: rgba(255, 255, 255, .07)
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0
+        }
+
+        .user-name {
+            color: rgba(255, 255, 255, .8);
+            font-size: 13px;
+            font-weight: 500
+        }
+
+        .user-role {
+            color: rgba(255, 255, 255, .35);
+            font-size: 11px
+        }
+
+        .sidebar-user > i {
+            color: rgba(255, 255, 255, .25);
+            font-size: 15px;
+            margin-left: auto
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0
+        }
+
+        .topbar {
+            height: 52px;
+            min-height: 52px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--gray-200);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .topbar-icon {
+            font-size: 17px;
+            color: var(--blue)
+        }
+
+        .topbar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900)
+        }
+
+        .topbar-sep {
+            color: var(--gray-400)
+        }
+
+        .topbar-sub {
+            font-size: 13px;
+            color: var(--gray-600)
+        }
+
+        .content {
+            flex: 1;
+            overflow: hidden
+        }
+
+        /* ── PANELS ── */
+        .panel {
+            height: 100%;
+            display: none;
+            flex-direction: column
+        }
+
+        .panel.active {
+            display: flex
+        }
+
+        /* ── CHAT ── */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            background: var(--gray-50)
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 4px
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--gray-200);
+            border-radius: 2px
+        }
+
+        .welcome {
+            margin: auto;
+            text-align: center;
+            max-width: 420px;
+            padding: 40px 20px
+        }
+
+        .welcome-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--blue-light);
+            border: 1px solid var(--blue-border);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px
+        }
+
+        .welcome-icon i {
+            font-size: 28px;
+            color: var(--blue)
+        }
+
+        .welcome h2 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px
+        }
+
+        .welcome p {
+            font-size: 14px;
+            color: var(--gray-600);
+            line-height: 1.65
+        }
+
+        .msg-row {
+            display: flex;
+            gap: 10px;
+            max-width: 720px
+        }
+
+        .msg-row.user {
+            flex-direction: row-reverse;
+            margin-left: auto
+        }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 18px;
+            flex-shrink: 0
+        }
+
+        .msg-avatar.ia {
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border)
+        }
+
+        .msg-avatar.user {
+            background: var(--blue);
+            color: #fff
+        }
+
+        .msg-body {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0
+        }
+
+        .msg-name {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--gray-400);
+            padding: 0 2px
+        }
+
+        .msg-row.user .msg-name {
+            text-align: right
+        }
+
+        .msg-bubble {
+            padding: 11px 15px;
+            font-size: 14px;
+            line-height: 1.7;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px 12px 12px 12px;
+            color: var(--gray-900);
+            word-break: break-word
+        }
+
+        .msg-row.user .msg-bubble {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #fff;
+            border-radius: 12px 4px 12px 12px
+        }
+
+        .typing-bubble {
+            padding: 12px 15px;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px 12px 12px 12px;
+            display: flex;
+            gap: 5px;
+            align-items: center
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            animation: blink 1.2s infinite
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: .2s
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: .4s
+        }
+
+        @keyframes blink {
+            0%, 80%, 100% {
+                opacity: .3;
+                transform: scale(1)
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.25)
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .escalation-notice {
+            background: var(--amber-bg);
+            border: 1px solid var(--amber-border);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--amber-text);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .escalation-notice i {
+            font-size: 15px;
+            flex-shrink: 0
+        }
+
+        .chat-bottom {
+            padding: 14px 40px 18px;
+            background: #fff;
+            border-top: 1px solid var(--gray-200)
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-bottom: 12px
+        }
+
+        .chip {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all .12s;
+            white-space: nowrap
+        }
+
+        .chip:hover {
+            background: var(--blue-light);
+            border-color: var(--blue-border);
+            color: var(--navy-2)
+        }
+
+        .input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px
+        }
+
+        .input-wrap {
+            flex: 1;
+            position: relative
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 10px 46px 10px 16px;
+            border-radius: 22px;
+            border: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--gray-900);
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            overflow-y: auto;
+            outline: none;
+            line-height: 1.55;
+            transition: border-color .15s, box-shadow .15s
+        }
+
+        .chat-input::placeholder {
+            color: var(--gray-400)
+        }
+
+        .chat-input:focus {
+            border-color: var(--blue-2);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(55, 138, 221, .1)
+        }
+
+        .send-btn {
+            position: absolute;
+            right: 8px;
+            bottom: 7px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--blue);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .12s, transform .1s
+        }
+
+        .send-btn:hover {
+            background: var(--navy-2)
+        }
+
+        .send-btn:active {
+            transform: scale(.94)
+        }
+
+        .send-btn i {
+            color: #fff;
+            font-size: 14px
+        }
+
+        .input-hint {
+            font-size: 11px;
+            color: var(--gray-400);
+            text-align: center;
+            margin-top: 8px
+        }
+
+        /* ── CADASTRO ── */
+        .form-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 40px;
+            background: var(--gray-50)
+        }
+
+        .form-card {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            max-width: 640px
+        }
+
+        .form-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px
+        }
+
+        .form-card-sub {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 24px
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 16px
+        }
+
+        .form-grid .full {
+            grid-column: 1/-1
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 6px
+        }
+
+        .form-field input, .form-field select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: var(--font);
+            color: var(--gray-900);
+            background: var(--gray-50);
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            appearance: none
+        }
+
+        .form-field input:focus, .form-field select:focus {
+            border-color: var(--blue-2);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(55, 138, 221, .1)
+        }
+
+        .form-actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 10px
+        }
+
+        .btn-submit {
+            padding: 10px 24px;
+            background: var(--blue);
+            border: none;
+            border-radius: var(--radius);
+            color: #fff;
+            font-family: var(--font);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background .15s
+        }
+
+        .btn-submit:hover {
+            background: var(--navy-2)
+        }
+
+        .btn-submit:disabled {
+            opacity: .6;
+            cursor: default
+        }
+
+        .btn-reset {
+            padding: 10px 18px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            background: #fff;
+            font-family: var(--font);
+            font-size: 14px;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: background .15s
+        }
+
+        .btn-reset:hover {
+            background: var(--gray-50)
+        }
+
+        .form-success {
+            background: var(--green-bg);
+            border: 1px solid var(--green-border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--green-text);
+            margin-top: 16px;
+            display: none;
+            align-items: center;
+            gap: 8px
+        }
+
+        .form-success.show {
+            display: flex
+        }
+
+        .form-success i {
+            font-size: 16px;
+            flex-shrink: 0
+        }
+
+        .form-error-msg {
+            background: var(--red-bg);
+            border: 1px solid var(--red-border);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--red-text);
+            margin-top: 16px;
+            display: none;
+            align-items: center;
+            gap: 8px
+        }
+
+        .form-error-msg.show {
+            display: flex
+        }
+
+        /* ── ESCALAMENTOS ── */
+        .esc-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 40px;
+            background: var(--gray-50)
+        }
+
+        .esc-header {
+            margin-bottom: 24px
+        }
+
+        .esc-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px
+        }
+
+        .esc-header p {
+            font-size: 13px;
+            color: var(--gray-600)
+        }
+
+        .esc-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400)
+        }
+
+        .esc-empty i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block
+        }
+
+        .esc-empty p {
+            font-size: 14px
+        }
+
+        .esc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .esc-item {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px
+        }
+
+        .esc-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            background: var(--amber-bg);
+            border: 1px solid var(--amber-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .esc-icon i {
+            font-size: 17px;
+            color: var(--amber-text)
+        }
+
+        .esc-info {
+            flex: 1;
+            min-width: 0
+        }
+
+        .esc-question {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray-900);
+            margin-bottom: 4px
+        }
+
+        .esc-meta {
+            font-size: 12px;
+            color: var(--gray-400);
+            font-family: var(--mono)
+        }
+
+        .esc-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--amber-bg);
+            color: var(--amber-text);
+            border: 1px solid var(--amber-border);
+            white-space: nowrap;
+            flex-shrink: 0
+        }
+
+        .esc-resolved {
+            background: var(--green-bg);
+            color: var(--green-text);
+            border-color: var(--green-border)
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --sidebar: 60px
+            }
+
+            .logo-text, .logo-sub, .nav-label, .nav-item span, .nav-badge, .user-name, .user-role {
+                display: none
+            }
+
+            .sidebar-logo {
+                justify-content: center;
+                padding: 16px 8px
+            }
+
+            .nav-item {
+                justify-content: center;
+                padding: 10px
+            }
+
+            .sidebar-user {
+                justify-content: center
+            }
+
+            .chat-messages, .chat-bottom, .form-panel, .esc-panel {
+                padding-left: 16px;
+                padding-right: 16px
+            }
+
+            .form-grid {
+                grid-template-columns:1fr
+            }
+
+            .form-grid .full {
+                grid-column: 1
+            }
+        }
+    </style>
 </head>
 <body>
 
 <!-- ── LOGIN / CADASTRO ── -->
 <div class="view active" id="view-auth">
-  <div class="auth-card" id="card-login">
-    <div class="auth-logo">
-      <div class="auth-logo-icon"><i class="ti ti-building-factory-2"></i></div>
-      <div><div class="auth-logo-text">CF Obras</div><div class="auth-logo-sub">Central de Ajuda</div></div>
+    <div class="auth-card" id="card-login">
+        <div class="auth-logo">
+            <div class="auth-logo-icon"><i class="ti ti-building-factory-2"></i></div>
+            <div>
+                <div class="auth-logo-text">CF Obras</div>
+                <div class="auth-logo-sub">Central de Ajuda</div>
+            </div>
+        </div>
+        <div class="auth-title">Entrar na plataforma</div>
+        <div class="auth-sub">Use seu email e senha cadastrados</div>
+        <div class="auth-error" id="login-error"></div>
+        <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com"/></div>
+        <div class="field"><label>Senha</label><input type="password" id="login-senha" placeholder="••••••••"
+                                                      onkeydown="if(event.key==='Enter')fazerLogin()"/></div>
+        <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+        <div class="auth-switch">Não tem conta? <a onclick="mostrarCadastro()">Solicitar acesso</a></div>
     </div>
-    <div class="auth-title">Entrar na plataforma</div>
-    <div class="auth-sub">Use seu email e senha cadastrados</div>
-    <div class="auth-error" id="login-error"></div>
-    <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com" /></div>
-    <div class="field"><label>Senha</label><input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()" /></div>
-    <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
-    <div class="auth-switch">Não tem conta? <a onclick="mostrarCadastro()">Solicitar acesso</a></div>
-  </div>
 
-  <div class="auth-card" id="card-cadastro" style="display:none">
-    <div class="auth-logo">
-      <div class="auth-logo-icon"><i class="ti ti-building-factory-2"></i></div>
-      <div><div class="auth-logo-text">CF Obras</div><div class="auth-logo-sub">Central de Ajuda</div></div>
+    <div class="auth-card" id="card-cadastro" style="display:none">
+        <div class="auth-logo">
+            <div class="auth-logo-icon"><i class="ti ti-building-factory-2"></i></div>
+            <div>
+                <div class="auth-logo-text">CF Obras</div>
+                <div class="auth-logo-sub">Central de Ajuda</div>
+            </div>
+        </div>
+        <div class="auth-title">Cadastre-se</div>
+        <div class="auth-sub">Preencha seus dados para criar uma conta</div>
+        <div class="auth-error" id="cadastro-error"></div>
+        <div class="auth-success" id="login-success"></div>
+        <div class="field"><label>Nome completo</label><input type="text" id="cadastro-nome" placeholder="Seu nome"/>
+        </div>
+        <div class="field"><label>Email</label><input type="email" id="cadastro-email" placeholder="seu@email.com"/>
+        </div>
+        <div class="field"><label>Senha</label><input type="password" id="cadastro-senha"
+                                                      placeholder="Mínimo 8 caracteres"
+                                                      onkeydown="if(event.key==='Enter')fazerCadastro()"/></div>
+        <button class="btn-primary" onclick="fazerCadastro()">Criar conta</button>
+        <div class="auth-switch">Já tem conta? <a onclick="mostrarLogin()">Entrar</a></div>
     </div>
-    <div class="auth-title">Solicitar acesso</div>
-    <div class="auth-sub">Preencha seus dados para criar uma conta</div>
-    <div class="auth-error" id="cadastro-error"></div>
-    <div class="field"><label>Nome completo</label><input type="text" id="cadastro-nome" placeholder="Seu nome" /></div>
-    <div class="field"><label>Email</label><input type="email" id="cadastro-email" placeholder="seu@email.com" /></div>
-    <div class="field"><label>Senha</label><input type="password" id="cadastro-senha" placeholder="Mínimo 8 caracteres" onkeydown="if(event.key==='Enter')fazerCadastro()" /></div>
-    <button class="btn-primary" onclick="fazerCadastro()">Criar conta</button>
-    <div class="auth-switch">Já tem conta? <a onclick="mostrarLogin()">Entrar</a></div>
-  </div>
 </div>
 
 <!-- ── APP ── -->
 <div class="view" id="view-app">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="ti ti-building-factory-2"></i></div>
-      <div><div class="logo-text">CF Obras</div><div class="logo-sub">Central de Ajuda</div></div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-label">Menu</div>
-      <div class="nav-item active" onclick="showPanel('chat')" id="nav-chat">
-        <i class="ti ti-message-chatbot"></i><span>Assistente</span>
-      </div>
-      <div class="nav-item" onclick="showPanel('cadastro')" id="nav-cadastro">
-        <i class="ti ti-user-plus"></i><span>Cadastro</span>
-      </div>
-      <div class="nav-item" onclick="showPanel('escalamentos')" id="nav-escalamentos">
-        <i class="ti ti-alert-circle"></i><span>Escalamentos</span>
-        <span class="nav-badge" id="badge-esc">0</span>
-      </div>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="sidebar-user" onclick="fazerLogout()">
-        <div class="user-avatar" id="user-initials">?</div>
-        <div><div class="user-name" id="user-name-display">...</div><div class="user-role">Usuário</div></div>
-        <i class="ti ti-logout"></i>
-      </div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="topbar">
-      <i class="ti ti-message-chatbot topbar-icon" id="topbar-icon"></i>
-      <span class="topbar-title" id="topbar-title">Assistente Virtual</span>
-      <span class="topbar-sep">›</span>
-      <span class="topbar-sub" id="topbar-sub">Tire suas dúvidas sobre o CF Obras</span>
-    </div>
-    <div class="content">
-
-      <!-- CHAT -->
-      <div class="panel active" id="panel-chat">
-        <div class="chat-messages" id="chat-messages">
-          <div id="welcome-state" class="welcome">
-            <div class="welcome-icon"><i class="ti ti-message-chatbot"></i></div>
-            <h2>Olá! Como posso ajudar?</h2>
-            <p>Sou o assistente do CF Obras. Faça uma pergunta sobre o sistema e responderei com base na documentação.</p>
-          </div>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon"><i class="ti ti-building-factory-2"></i></div>
+            <div>
+                <div class="logo-text">CF Obras</div>
+                <div class="logo-sub">Central de Ajuda</div>
+            </div>
         </div>
-        <div class="chat-bottom">
-          <div class="suggestions" id="suggestions">
-            <div class="chip" onclick="usarSugestao(this)">Como lançar uma nota fiscal?</div>
-            <div class="chip" onclick="usarSugestao(this)">Como fazer uma requisição?</div>
-            <div class="chip" onclick="usarSugestao(this)">Como cadastrar uma obra?</div>
-            <div class="chip" onclick="usarSugestao(this)">Como acessar o relatório?</div>
-          </div>
-          <div class="input-row">
-            <div class="input-wrap">
+        <nav class="sidebar-nav">
+            <div class="nav-label">Menu</div>
+            <div class="nav-item active" onclick="showPanel('chat')" id="nav-chat">
+                <i class="ti ti-message-chatbot"></i><span>Assistente</span>
+            </div>
+            <div class="nav-item" onclick="showPanel('cadastro')" id="nav-cadastro">
+                <i class="ti ti-user-plus"></i><span>Cadastro</span>
+            </div>
+            <div class="nav-item" onclick="showPanel('escalamentos')" id="nav-escalamentos">
+                <i class="ti ti-alert-circle"></i><span>Escalamentos</span>
+                <span class="nav-badge" id="badge-esc">0</span>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user" onclick="fazerLogout()">
+                <div class="user-avatar" id="user-initials">?</div>
+                <div>
+                    <div class="user-name" id="user-name-display">...</div>
+                    <div class="user-role">Usuário</div>
+                </div>
+                <i class="ti ti-logout"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <i class="ti ti-message-chatbot topbar-icon" id="topbar-icon"></i>
+            <span class="topbar-title" id="topbar-title">Assistente Virtual</span>
+            <span class="topbar-sep">›</span>
+            <span class="topbar-sub" id="topbar-sub">Tire suas dúvidas sobre o CF Obras</span>
+        </div>
+        <div class="content">
+
+            <!-- CHAT -->
+            <div class="panel active" id="panel-chat">
+                <div class="chat-messages" id="chat-messages">
+                    <div id="welcome-state" class="welcome">
+                        <div class="welcome-icon"><i class="ti ti-message-chatbot"></i></div>
+                        <h2>Olá! Como posso ajudar?</h2>
+                        <p>Sou o assistente do CF Obras. Faça uma pergunta sobre o sistema e responderei com base na
+                            documentação.</p>
+                    </div>
+                </div>
+                <div class="chat-bottom">
+                    <div class="suggestions" id="suggestions">
+                        <div class="chip" onclick="usarSugestao(this)">Como lançar uma nota fiscal?</div>
+                        <div class="chip" onclick="usarSugestao(this)">Como fazer uma requisição?</div>
+                        <div class="chip" onclick="usarSugestao(this)">Como cadastrar uma obra?</div>
+                        <div class="chip" onclick="usarSugestao(this)">Como acessar o relatório?</div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-wrap">
               <textarea id="chat-input" class="chat-input" rows="1" placeholder="Digite sua dúvida sobre o CF Obras..."
-                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensagem()}"
-                oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-              <button class="send-btn" onclick="enviarMensagem()"><i class="ti ti-send"></i></button>
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensagem()}"
+                        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+                            <button class="send-btn" onclick="enviarMensagem()"><i class="ti ti-send"></i></button>
+                        </div>
+                    </div>
+                    <div class="input-hint">As respostas são baseadas na documentação do CF Obras</div>
+                </div>
             </div>
-          </div>
-          <div class="input-hint">As respostas são baseadas na documentação do CF Obras</div>
-        </div>
-      </div>
 
-      <!-- CADASTRO -->
-      <div class="panel" id="panel-cadastro">
-        <div class="form-panel">
-          <div class="form-card">
-            <div class="form-card-title">Cadastro de colaborador</div>
-            <div class="form-card-sub">Preencha os dados para registrar um novo colaborador no CF Obras</div>
-            <div class="form-grid">
-              <div class="form-field full">
-                <label>Nome completo</label>
-                <input type="text" id="f-nome" placeholder="Nome do colaborador" />
-              </div>
-              <div class="form-field">
-                <label>CPF</label>
-                <input type="text" id="f-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)" />
-              </div>
-              <div class="form-field">
-                <label>Email</label>
-                <input type="email" id="f-email" placeholder="email@empresa.com" />
-              </div>
-              <div class="form-field">
-                <label>Função</label>
-                <input type="text" id="f-funcao" placeholder="Ex: Pedreiro, Eletricista..." />
-              </div>
-              <div class="form-field">
-                <label>CCISA</label>
-                <input type="text" id="f-ccisa" placeholder="Ex: CCISA-04" />
-              </div>
-              <div class="form-field">
-                <label>Data de admissão</label>
-                <input type="date" id="f-admissao" />
-              </div>
+            <!-- CADASTRO -->
+            <div class="panel" id="panel-cadastro">
+                <div class="form-panel">
+                    <div class="form-card">
+                        <div class="form-card-title">Cadastro de colaborador</div>
+                        <div class="form-card-sub">Preencha os dados para registrar um novo colaborador no CF Obras
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-field full">
+                                <label>Nome completo</label>
+                                <input type="text" id="f-nome" placeholder="Nome do colaborador"/>
+                            </div>
+                            <div class="form-field">
+                                <label>CPF</label>
+                                <input type="text" id="f-cpf" placeholder="000.000.000-00" maxlength="14"
+                                       oninput="mascaraCPF(this)"/>
+                            </div>
+                            <div class="form-field">
+                                <label>Email</label>
+                                <input type="email" id="f-email" placeholder="email@empresa.com"/>
+                            </div>
+                            <div class="form-field">
+                                <label>Função</label>
+                                <input type="text" id="f-funcao" placeholder="Ex: Pedreiro, Eletricista..."/>
+                            </div>
+                            <div class="form-field">
+                                <label>CCISA</label>
+                                <input type="text" id="f-ccisa" placeholder="Ex: CCISA-04"/>
+                            </div>
+                            <div class="form-field">
+                                <label>Data de admissão</label>
+                                <input type="date" id="f-admissao"/>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-submit" id="btn-cadastrar" onclick="cadastrarColaborador()">
+                                <i class="ti ti-user-plus"></i> Cadastrar
+                            </button>
+                            <button class="btn-reset" onclick="limparFormulario()">Limpar</button>
+                        </div>
+                        <div class="form-success" id="form-success">
+                            <i class="ti ti-circle-check"></i>
+                            <span id="form-success-msg">Colaborador cadastrado com sucesso!</span>
+                        </div>
+                        <div class="form-error-msg" id="form-error">
+                            <i class="ti ti-alert-circle"></i>
+                            <span id="form-error-msg">Erro ao cadastrar. Tente novamente.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-actions">
-              <button class="btn-submit" id="btn-cadastrar" onclick="cadastrarColaborador()">
-                <i class="ti ti-user-plus"></i> Cadastrar
-              </button>
-              <button class="btn-reset" onclick="limparFormulario()">Limpar</button>
-            </div>
-            <div class="form-success" id="form-success">
-              <i class="ti ti-circle-check"></i>
-              <span id="form-success-msg">Colaborador cadastrado com sucesso!</span>
-            </div>
-            <div class="form-error-msg" id="form-error">
-              <i class="ti ti-alert-circle"></i>
-              <span id="form-error-msg">Erro ao cadastrar. Tente novamente.</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ESCALAMENTOS -->
-      <div class="panel" id="panel-escalamentos">
-        <div class="esc-panel">
-          <div class="esc-header">
-            <h2>Perguntas sem resposta</h2>
-            <p>Perguntas que o assistente não conseguiu responder e precisam de atenção</p>
-          </div>
-          <div id="esc-lista"></div>
-        </div>
-      </div>
+            <!-- ESCALAMENTOS -->
+            <div class="panel" id="panel-escalamentos">
+                <div class="esc-panel">
+                    <div class="esc-header">
+                        <h2>Perguntas sem resposta</h2>
+                        <p>Perguntas que o assistente não conseguiu responder e precisam de atenção</p>
+                    </div>
+                    <div id="esc-lista"></div>
+                </div>
+            </div>
 
-    </div>
-  </main>
+        </div>
+    </main>
 </div>
 
 <script>
-/* ══════════════════════════════════════════════════
-   ESTADO
-══════════════════════════════════════════════════ */
-let usuarioLogado = null;
-let digitando = false;
+    /* ══════════════════════════════════════════════════
+       ESTADO
+    ══════════════════════════════════════════════════ */
+    let usuarioLogado = null;
+    let digitando = false;
 
-/* ══════════════════════════════════════════════════
-   AUTENTICAÇÃO
-══════════════════════════════════════════════════ */
-async function fazerLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const senha = document.getElementById('login-senha').value.trim();
-  const erro = document.getElementById('login-error');
-  erro.classList.remove('show');
+    /* ══════════════════════════════════════════════════
+       AUTENTICAÇÃO
+    ══════════════════════════════════════════════════ */
+    async function fazerLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const senha = document.getElementById('login-senha').value.trim();
+        const erro = document.getElementById('login-error');
+        erro.classList.remove('show');
 
-  if (!email || !senha) {
-    erro.textContent = 'Preencha email e senha.';
-    erro.classList.add('show');
-    return;
-  }
+        if (!email || !senha) {
+            erro.textContent = 'Preencha email e senha.';
+            erro.classList.add('show');
+            return;
+        }
 
-  // TODO: conectar ao backend
-  // const res = await fetch('/usuario/login', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ email, senha })
-  // });
-  // const data = await res.json();
-  // if (!res.ok) { erro.textContent = data.mensagem; erro.classList.add('show'); return; }
-  // usuarioLogado = data;
+        const res = await fetch('http://localhost:8000/usuario/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, senha})
+        });
 
-  // SIMULAÇÃO — remover quando conectar o backend
-  usuarioLogado = { id: 1, nome: email.split('@')[0], email };
-  entrarNoApp();
-}
+        const data = await res.json();
+        if (data.id) {
+            usuarioLogado = data;
+            entrarNoApp();
+        } else {
+            erro.textContent = data.mensagem;
+            erro.classList.add('show');
+        }
+    }
 
-async function fazerCadastro() {
-  const nome = document.getElementById('cadastro-nome').value.trim();
-  const email = document.getElementById('cadastro-email').value.trim();
-  const senha = document.getElementById('cadastro-senha').value.trim();
-  const erro = document.getElementById('cadastro-error');
-  erro.classList.remove('show');
+    async function fazerCadastro() {
+        const nome = document.getElementById('cadastro-nome').value.trim();
+        const email = document.getElementById('cadastro-email').value.trim();
+        const senha = document.getElementById('cadastro-senha').value.trim();
+        const erro = document.getElementById('cadastro-error');
+        erro.classList.remove('show');
 
-  if (!nome || !email || !senha) {
-    erro.textContent = 'Preencha todos os campos.';
-    erro.classList.add('show');
-    return;
-  }
-  if (senha.length < 8) {
-    erro.textContent = 'Senha deve ter ao menos 8 caracteres.';
-    erro.classList.add('show');
-    return;
-  }
+        if (!nome || !email || !senha) {
+            erro.textContent = 'Preencha todos os campos.';
+            erro.classList.add('show');
+            return;
+        }
+        if (senha.length < 8) {
+            erro.textContent = 'Senha deve ter ao menos 8 caracteres.';
+            erro.classList.add('show');
+            return;
+        }
 
-  // TODO: conectar ao backend
-  // const res = await fetch('/usuario/cadastrar', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ nome, email, senha })
-  // });
-  // const data = await res.json();
-  // if (!res.ok) { erro.textContent = data.mensagem; erro.classList.add('show'); return; }
+        const res = await fetch('http://127.0.0.1:8000/usuario/cadastrar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({nome, email, senha})
+        });
+        const data = await res.json();
+        if (data.sucesso) {
+            const sucesso = document.getElementById('login-success');
+            sucesso.textContent = 'Cadastro realizado! Faça login para continuar.';
+            sucesso.classList.add('show');
 
-  // SIMULAÇÃO — remover quando conectar o backend
-  usuarioLogado = { id: 1, nome, email };
-  entrarNoApp();
-}
+            setTimeout(() => {
+                mostrarLogin();
+            }, 2000);
+        } else {
+            erro.textContent = data.mensagem;
+            erro.classList.add('show');
+        }
+    }
 
-function entrarNoApp() {
-  document.getElementById('view-auth').classList.remove('active');
-  document.getElementById('view-app').classList.add('active');
-  const iniciais = usuarioLogado.nome.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
-  document.getElementById('user-initials').textContent = iniciais;
-  document.getElementById('user-name-display').textContent = usuarioLogado.nome;
-  carregarEscalamentos();
-}
+    function entrarNoApp() {
+        document.getElementById('view-auth').classList.remove('active');
+        document.getElementById('view-app').classList.add('active');
+        const iniciais = usuarioLogado.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+        document.getElementById('user-initials').textContent = iniciais;
+        document.getElementById('user-name-display').textContent = usuarioLogado.nome;
+        carregarEscalamentos();
+    }
 
-function fazerLogout() {
-  usuarioLogado = null;
-  document.getElementById('view-app').classList.remove('active');
-  document.getElementById('view-auth').classList.add('active');
-  document.getElementById('chat-messages').innerHTML = '<div id="welcome-state" class="welcome"><div class="welcome-icon"><i class="ti ti-message-chatbot"></i></div><h2>Olá! Como posso ajudar?</h2><p>Sou o assistente do CF Obras. Faça uma pergunta sobre o sistema e responderei com base na documentação.</p></div>';
-  document.getElementById('suggestions').style.display = 'flex';
-}
+    function fazerLogout() {
+        usuarioLogado = null;
+        document.getElementById('view-app').classList.remove('active');
+        document.getElementById('view-auth').classList.add('active');
+        document.getElementById('chat-messages').innerHTML = '<div id="welcome-state" class="welcome"><div class="welcome-icon"><i class="ti ti-message-chatbot"></i></div><h2>Olá! Como posso ajudar?</h2><p>Sou o assistente do CF Obras. Faça uma pergunta sobre o sistema e responderei com base na documentação.</p></div>';
+        document.getElementById('suggestions').style.display = 'flex';
+    }
 
-function mostrarCadastro() {
-  document.getElementById('card-login').style.display = 'none';
-  document.getElementById('card-cadastro').style.display = 'block';
-}
-function mostrarLogin() {
-  document.getElementById('card-cadastro').style.display = 'none';
-  document.getElementById('card-login').style.display = 'block';
-}
+    function mostrarCadastro() {
+        document.getElementById('card-login').style.display = 'none';
+        document.getElementById('card-cadastro').style.display = 'block';
+    }
 
-/* ══════════════════════════════════════════════════
-   NAVEGAÇÃO
-══════════════════════════════════════════════════ */
-const topbarInfo = {
-  chat:         { icon: 'ti-message-chatbot', title: 'Assistente Virtual',     sub: 'Tire suas dúvidas sobre o CF Obras' },
-  cadastro:     { icon: 'ti-user-plus',       title: 'Cadastro de Colaborador', sub: 'Registre novos colaboradores no sistema' },
-  escalamentos: { icon: 'ti-alert-circle',    title: 'Escalamentos',            sub: 'Perguntas que precisam de atenção' },
-};
+    function mostrarLogin() {
+        document.getElementById('card-cadastro').style.display = 'none';
+        document.getElementById('card-login').style.display = 'block';
+    }
 
-function showPanel(name) {
-  ['chat','cadastro','escalamentos'].forEach(p => {
-    document.getElementById('panel-' + p).classList.toggle('active', p === name);
-    document.getElementById('nav-' + p).classList.toggle('active', p === name);
-  });
-  const info = topbarInfo[name];
-  document.getElementById('topbar-icon').className = 'ti ' + info.icon + ' topbar-icon';
-  document.getElementById('topbar-title').textContent = info.title;
-  document.getElementById('topbar-sub').textContent = info.sub;
-  if (name === 'escalamentos') carregarEscalamentos();
-}
+    /* ══════════════════════════════════════════════════
+       NAVEGAÇÃO
+    ══════════════════════════════════════════════════ */
+    const topbarInfo = {
+        chat: {icon: 'ti-message-chatbot', title: 'Assistente Virtual', sub: 'Tire suas dúvidas sobre o CF Obras'},
+        cadastro: {
+            icon: 'ti-user-plus',
+            title: 'Cadastro de Colaborador',
+            sub: 'Registre novos colaboradores no sistema'
+        },
+        escalamentos: {icon: 'ti-alert-circle', title: 'Escalamentos', sub: 'Perguntas que precisam de atenção'},
+    };
 
-/* ══════════════════════════════════════════════════
-   CHAT
-══════════════════════════════════════════════════ */
-async function enviarMensagem() {
-  const input = document.getElementById('chat-input');
-  const texto = input.value.trim();
-  if (!texto || digitando) return;
+    function showPanel(name) {
+        ['chat', 'cadastro', 'escalamentos'].forEach(p => {
+            document.getElementById('panel-' + p).classList.toggle('active', p === name);
+            document.getElementById('nav-' + p).classList.toggle('active', p === name);
+        });
+        const info = topbarInfo[name];
+        document.getElementById('topbar-icon').className = 'ti ' + info.icon + ' topbar-icon';
+        document.getElementById('topbar-title').textContent = info.title;
+        document.getElementById('topbar-sub').textContent = info.sub;
+        if (name === 'escalamentos') carregarEscalamentos();
+    }
 
-  input.value = '';
-  input.style.height = 'auto';
-  document.getElementById('suggestions').style.display = 'none';
-  document.getElementById('welcome-state')?.remove();
+    /* ══════════════════════════════════════════════════
+       CHAT
+    ══════════════════════════════════════════════════ */
+    async function enviarMensagem() {
+        const input = document.getElementById('chat-input');
+        const texto = input.value.trim();
+        if (!texto || digitando) return;
 
-  adicionarMensagem('user', texto);
-  digitando = true;
-  mostrarDigitando();
+        input.value = '';
+        input.style.height = 'auto';
+        document.getElementById('suggestions').style.display = 'none';
+        document.getElementById('welcome-state')?.remove();
 
-  try {
-    // TODO: conectar ao backend
-    // const res = await fetch('/chat', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ pergunta: texto, usuario_id: usuarioLogado.id })
-    // });
-    // const data = await res.json();
-    // removerDigitando();
-    // adicionarMensagemIA(data.resposta);
-    // digitando = false;
+        adicionarMensagem('user', texto);
+        digitando = true;
+        mostrarDigitando();
 
-    // SIMULAÇÃO — remover quando conectar o backend
-    await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
-    removerDigitando();
-    adicionarMensagemIA('Aqui aparecerá a resposta do seu backend. Para conectar, descomente o bloco TODO no arquivo <code>index.html</code> dentro da função <code>enviarMensagem()</code> e aponte para <code>http://localhost:8000/chat</code>.');
-    digitando = false;
+        try {
+            // TODO: conectar ao backend
+            // const res = await fetch('/chat', {
+            //   method: 'POST',
+            //   headers: { 'Content-Type': 'application/json' },
+            //   body: JSON.stringify({ pergunta: texto, usuario_id: usuarioLogado.id })
+            // });
+            // const data = await res.json();
+            // removerDigitando();
+            // adicionarMensagemIA(data.resposta);
+            // digitando = false;
 
-  } catch (e) {
-    removerDigitando();
-    adicionarMensagemIA('Erro ao conectar com o servidor. Verifique se o backend está rodando.');
-    digitando = false;
-  }
-}
+            // SIMULAÇÃO — remover quando conectar o backend
+            await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
+            removerDigitando();
+            adicionarMensagemIA('Aqui aparecerá a resposta do seu backend. Para conectar, descomente o bloco TODO no arquivo <code>index.html</code> dentro da função <code>enviarMensagem()</code> e aponte para <code>http://localhost:8000/chat</code>.');
+            digitando = false;
 
-function adicionarMensagem(role, texto) {
-  const container = document.getElementById('chat-messages');
-  const isUser = role === 'user';
-  const div = document.createElement('div');
-  div.className = 'msg-row' + (isUser ? ' user' : '');
-  const iniciais = usuarioLogado ? usuarioLogado.nome.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() : 'U';
-  div.innerHTML = `
+        } catch (e) {
+            removerDigitando();
+            adicionarMensagemIA('Erro ao conectar com o servidor. Verifique se o backend está rodando.');
+            digitando = false;
+        }
+    }
+
+    function adicionarMensagem(role, texto) {
+        const container = document.getElementById('chat-messages');
+        const isUser = role === 'user';
+        const div = document.createElement('div');
+        div.className = 'msg-row' + (isUser ? ' user' : '');
+        const iniciais = usuarioLogado ? usuarioLogado.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'U';
+        div.innerHTML = `
     <div class="msg-avatar ${isUser ? 'user' : 'ia'}">${isUser ? iniciais : '<i class="ti ti-robot" style="font-size:15px"></i>'}</div>
     <div class="msg-body">
       <div class="msg-name">${isUser ? 'Você' : 'Assistente CF Obras'}</div>
       <div class="msg-bubble">${texto}</div>
     </div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
 
-function adicionarMensagemIA(texto) {
-  const container = document.getElementById('chat-messages');
-  const escalou = texto.toLowerCase().includes('não sei') || texto.toLowerCase().includes('nao sei');
-  const div = document.createElement('div');
-  div.className = 'msg-row';
-  div.innerHTML = `
+    function adicionarMensagemIA(texto) {
+        const container = document.getElementById('chat-messages');
+        const escalou = texto.toLowerCase().includes('não sei') || texto.toLowerCase().includes('nao sei');
+        const div = document.createElement('div');
+        div.className = 'msg-row';
+        div.innerHTML = `
     <div class="msg-avatar ia"><i class="ti ti-robot" style="font-size:15px"></i></div>
     <div class="msg-body">
       <div class="msg-name">Assistente CF Obras</div>
       <div class="msg-bubble">${texto}</div>
       ${escalou ? '<div class="escalation-notice"><i class="ti ti-bell"></i> Pergunta registrada para análise. Você será notificado quando houver resposta.</div>' : ''}
     </div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
 
-function mostrarDigitando() {
-  const container = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = 'msg-row'; div.id = 'typing';
-  div.innerHTML = `
+    function mostrarDigitando() {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = 'msg-row';
+        div.id = 'typing';
+        div.innerHTML = `
     <div class="msg-avatar ia"><i class="ti ti-robot" style="font-size:15px"></i></div>
     <div class="msg-body">
       <div class="msg-name">Assistente CF Obras</div>
       <div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     </div>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
 
-function removerDigitando() {
-  document.getElementById('typing')?.remove();
-}
+    function removerDigitando() {
+        document.getElementById('typing')?.remove();
+    }
 
-function usarSugestao(el) {
-  document.getElementById('chat-input').value = el.textContent;
-  enviarMensagem();
-}
+    function usarSugestao(el) {
+        document.getElementById('chat-input').value = el.textContent;
+        enviarMensagem();
+    }
 
-/* ══════════════════════════════════════════════════
-   CADASTRO
-══════════════════════════════════════════════════ */
-async function cadastrarColaborador() {
-  const nome    = document.getElementById('f-nome').value.trim();
-  const cpf     = document.getElementById('f-cpf').value.trim();
-  const email   = document.getElementById('f-email').value.trim();
-  const funcao  = document.getElementById('f-funcao').value.trim();
-  const ccisa   = document.getElementById('f-ccisa').value.trim();
-  const admissao = document.getElementById('f-admissao').value;
+    /* ══════════════════════════════════════════════════
+       CADASTRO
+    ══════════════════════════════════════════════════ */
+    async function cadastrarColaborador() {
+        const nome = document.getElementById('f-nome').value.trim();
+        const cpf = document.getElementById('f-cpf').value.trim();
+        const email = document.getElementById('f-email').value.trim();
+        const funcao = document.getElementById('f-funcao').value.trim();
+        const ccisa = document.getElementById('f-ccisa').value.trim();
+        const admissao = document.getElementById('f-admissao').value;
 
-  const sucesso = document.getElementById('form-success');
-  const erro    = document.getElementById('form-error');
-  sucesso.classList.remove('show');
-  erro.classList.remove('show');
+        const sucesso = document.getElementById('form-success');
+        const erro = document.getElementById('form-error');
+        sucesso.classList.remove('show');
+        erro.classList.remove('show');
 
-  if (!nome || !cpf || !email || !funcao || !ccisa || !admissao) {
-    document.getElementById('form-error-msg').textContent = 'Preencha todos os campos obrigatórios.';
-    erro.classList.add('show');
-    return;
-  }
+        if (!nome || !cpf || !email || !funcao || !ccisa || !admissao) {
+            document.getElementById('form-error-msg').textContent = 'Preencha todos os campos obrigatórios.';
+            erro.classList.add('show');
+            return;
+        }
 
-  const btn = document.getElementById('btn-cadastrar');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Cadastrando...';
+        const btn = document.getElementById('btn-cadastrar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Cadastrando...';
 
-  try {
-    // TODO: conectar ao backend
-    // const res = await fetch('/colaborador/cadastrar', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ nome, cpf, email, funcao, ccisa, data_admissao: admissao, usuario_id: usuarioLogado.id })
-    // });
-    // const data = await res.json();
-    // if (!res.ok) { throw new Error(data.mensagem || 'Erro ao cadastrar'); }
+        try {
+            // TODO: conectar ao backend
+            // const res = await fetch('/colaborador/cadastrar', {
+            //   method: 'POST',
+            //   headers: { 'Content-Type': 'application/json' },
+            //   body: JSON.stringify({ nome, cpf, email, funcao, ccisa, data_admissao: admissao, usuario_id: usuarioLogado.id })
+            // });
+            // const data = await res.json();
+            // if (!res.ok) { throw new Error(data.mensagem || 'Erro ao cadastrar'); }
 
-    // SIMULAÇÃO — remover quando conectar o backend
-    await new Promise(r => setTimeout(r, 1500));
+            // SIMULAÇÃO — remover quando conectar o backend
+            await new Promise(r => setTimeout(r, 1500));
 
-    document.getElementById('form-success-msg').textContent = `${nome} cadastrado com sucesso!`;
-    sucesso.classList.add('show');
-    limparFormulario();
+            document.getElementById('form-success-msg').textContent = `${nome} cadastrado com sucesso!`;
+            sucesso.classList.add('show');
+            limparFormulario();
 
-  } catch (e) {
-    document.getElementById('form-error-msg').textContent = e.message || 'Erro ao cadastrar. Tente novamente.';
-    erro.classList.add('show');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-user-plus"></i> Cadastrar';
-  }
-}
+        } catch (e) {
+            document.getElementById('form-error-msg').textContent = e.message || 'Erro ao cadastrar. Tente novamente.';
+            erro.classList.add('show');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ti ti-user-plus"></i> Cadastrar';
+        }
+    }
 
-function limparFormulario() {
-  ['f-nome','f-cpf','f-email','f-funcao','f-ccisa','f-admissao'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-}
+    function limparFormulario() {
+        ['f-nome', 'f-cpf', 'f-email', 'f-funcao', 'f-ccisa', 'f-admissao'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+    }
 
-function mascaraCPF(el) {
-  let v = el.value.replace(/\D/g,'').slice(0,11);
-  v = v.replace(/(\d{3})(\d)/,'$1.$2');
-  v = v.replace(/(\d{3})(\d)/,'$1.$2');
-  v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-  el.value = v;
-}
+    function mascaraCPF(el) {
+        let v = el.value.replace(/\D/g, '').slice(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        el.value = v;
+    }
 
-/* ══════════════════════════════════════════════════
-   ESCALAMENTOS
-══════════════════════════════════════════════════ */
-async function carregarEscalamentos() {
-  const lista = document.getElementById('esc-lista');
+    /* ══════════════════════════════════════════════════
+       ESCALAMENTOS
+    ══════════════════════════════════════════════════ */
+    async function carregarEscalamentos() {
+        const lista = document.getElementById('esc-lista');
 
-  // TODO: conectar ao backend
-  // const res = await fetch('/escalamentos?usuario_id=' + usuarioLogado.id);
-  // const data = await res.json();
-  // renderizarEscalamentos(data);
+        // TODO: conectar ao backend
+        // const res = await fetch('/escalamentos?usuario_id=' + usuarioLogado.id);
+        // const data = await res.json();
+        // renderizarEscalamentos(data);
 
-  // SIMULAÇÃO — remover quando conectar o backend
-  const simulado = [];
-  renderizarEscalamentos(simulado);
-}
+        // SIMULAÇÃO — remover quando conectar o backend
+        const simulado = [];
+        renderizarEscalamentos(simulado);
+    }
 
-function renderizarEscalamentos(items) {
-  const lista = document.getElementById('esc-lista');
-  const badge = document.getElementById('badge-esc');
-  const pendentes = items.filter(i => !i.resolvido).length;
-  badge.textContent = pendentes;
+    function renderizarEscalamentos(items) {
+        const lista = document.getElementById('esc-lista');
+        const badge = document.getElementById('badge-esc');
+        const pendentes = items.filter(i => !i.resolvido).length;
+        badge.textContent = pendentes;
 
-  if (items.length === 0) {
-    lista.innerHTML = `<div class="esc-empty"><i class="ti ti-circle-check"></i><p>Nenhuma pergunta pendente. Tudo certo!</p></div>`;
-    return;
-  }
+        if (items.length === 0) {
+            lista.innerHTML = `<div class="esc-empty"><i class="ti ti-circle-check"></i><p>Nenhuma pergunta pendente. Tudo certo!</p></div>`;
+            return;
+        }
 
-  lista.innerHTML = '<div class="esc-list">' + items.map(item => `
+        lista.innerHTML = '<div class="esc-list">' + items.map(item => `
     <div class="esc-item">
       <div class="esc-icon"><i class="ti ti-help"></i></div>
       <div class="esc-info">
@@ -656,7 +1550,7 @@ function renderizarEscalamentos(items) {
       </div>
       <span class="esc-badge ${item.resolvido ? 'esc-resolved' : ''}">${item.resolvido ? 'Resolvido' : 'Pendente'}</span>
     </div>`).join('') + '</div>';
-}
+    }
 
 
 </script>
