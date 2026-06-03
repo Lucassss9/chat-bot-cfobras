@@ -1251,12 +1251,12 @@
         });
 
         const data = await res.json();
-        if (data.id) {
-            usuarioLogado = data;
-            entrarNoApp();
+        if (res.ok) {
+          usuarioLogado = data;
+          entrarNoApp();
         } else {
-            erro.textContent = data.mensagem;
-            erro.classList.add('show');
+          erro.textContent = data.detail;
+          erro.classList.add('show');
         }
     }
 
@@ -1284,7 +1284,7 @@
             body: JSON.stringify({nome, email, senha})
         });
         const data = await res.json();
-        if (data.sucesso) {
+        if (res.ok) {
             const sucesso = document.getElementById('login-success');
             sucesso.textContent = 'Cadastro realizado! Faça login para continuar.';
             sucesso.classList.add('show');
@@ -1293,7 +1293,7 @@
                 mostrarLogin();
             }, 2000);
         } else {
-            erro.textContent = data.mensagem;
+            erro.textContent = data.detail;
             erro.classList.add('show');
         }
     }
@@ -1368,23 +1368,15 @@
         mostrarDigitando();
 
         try {
-            // TODO: conectar ao backend
-            // const res = await fetch('/chat', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ pergunta: texto, usuario_id: usuarioLogado.id })
-            // });
-            // const data = await res.json();
-            // removerDigitando();
-            // adicionarMensagemIA(data.resposta);
-            // digitando = false;
-
-            // SIMULAÇÃO — remover quando conectar o backend
-            await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
+            const res = await fetch('http://localhost:8000/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pergunta: texto, usuario_id: usuarioLogado.id })
+            });
+            const data = await res.json();
             removerDigitando();
-            adicionarMensagemIA('Aqui aparecerá a resposta do seu backend. Para conectar, descomente o bloco TODO no arquivo <code>index.html</code> dentro da função <code>enviarMensagem()</code> e aponte para <code>http://localhost:8000/chat</code>.');
+            adicionarMensagemIA(data.resposta);
             digitando = false;
-
         } catch (e) {
             removerDigitando();
             adicionarMensagemIA('Erro ao conectar com o servidor. Verifique se o backend está rodando.');
