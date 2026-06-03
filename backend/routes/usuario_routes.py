@@ -1,17 +1,17 @@
 from fastapi import APIRouter, HTTPException
 from exception.usuario_exception import UsuarioJaExisteError, CredenciaisInvalidasError, DadosInvalidoError
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from service.usuario_service import cadastrar_usuario, login
 
 router = APIRouter()
 
 class UsuarioCadastro(BaseModel):
     nome: str
-    email: str
+    email: EmailStr
     senha: str
 
 class UsuarioLogin(BaseModel):
-    email: str
+    email: EmailStr
     senha: str
 
 @router.post("/usuario/cadastrar")

@@ -8,9 +8,6 @@ def cadastrar_usuario(nome, email, senha):
 
     _validar_vazio(nome, email, senha)
 
-    if not _validar_email(email):
-        raise DadosInvalidoError("E-mail inválido")
-
     if not _validar_senha(senha):
         raise DadosInvalidoError("Senha deve conter 8 caracteres ou mais")
 
@@ -41,9 +38,6 @@ def login(email, senha):
         return {"id": usuario.id, "nome": usuario.nome}
     else:
         raise CredenciaisInvalidasError("Senha incorreta")
-
-def _validar_email(email):
-    return "@" in email and ".com" in email
 
 def _validar_senha(senha):
     return len(senha) >= 8
