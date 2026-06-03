@@ -1255,7 +1255,7 @@
           usuarioLogado = data;
           entrarNoApp();
         } else {
-          erro.textContent = data.detail;
+          erro.textContent = Array.isArray(data.detail) ? 'Email inválido.' : data.detail;
           erro.classList.add('show');
         }
     }
@@ -1293,7 +1293,7 @@
                 mostrarLogin();
             }, 2000);
         } else {
-            erro.textContent = data.detail;
+            erro.textContent = Array.isArray(data.detail) ? 'Email inválido.' : data.detail;
             erro.classList.add('show');
         }
     }
