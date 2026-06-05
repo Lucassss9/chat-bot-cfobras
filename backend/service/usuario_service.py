@@ -1,7 +1,7 @@
 from repository.usuario_repository import salvar_usuario, buscar_usuario_por_email
 from exception.usuario_exception import UsuarioJaExisteError, DadosInvalidoError, CredenciaisInvalidasError
 
-def cadastrar_usuario(nome, email, senha):
+def cadastrar_usuario(nome, email, senha, db):
     nome = nome.strip()
     email = email.strip().lower()
     senha = senha.strip()
@@ -11,15 +11,15 @@ def cadastrar_usuario(nome, email, senha):
     if not _validar_senha(senha):
         raise DadosInvalidoError("Senha deve conter 8 caracteres ou mais")
 
-    usuario = buscar_usuario_por_email(email)
+    usuario = buscar_usuario_por_email(email, db)
 
     if usuario is None:
-        salvar_usuario(nome, email, senha)
+        salvar_usuario(nome, email, senha, db)
         return {"mensagem": "Usuário cadastrado com sucesso"}
     else:
         raise UsuarioJaExisteError("Usuário já existe")
 
-def login(email, senha):
+def login(email, senha, db):
     email = email.strip().lower()
     senha = senha.strip()
 
@@ -29,7 +29,7 @@ def login(email, senha):
     if not senha:
         raise DadosInvalidoError("Senha obrigatória")
 
-    usuario = buscar_usuario_por_email(email)
+    usuario = buscar_usuario_por_email(email, db)
 
     if usuario is None:
         raise CredenciaisInvalidasError("Usuário não existe. Faça o seu cadastro.")
