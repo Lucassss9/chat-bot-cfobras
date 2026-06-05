@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Text
-from config.connection import base
+from config.connection import get_db, Base
 
-class Manual(base):
+class Manual(Base):
     __tablename__ = "manuais"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

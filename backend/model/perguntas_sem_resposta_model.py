@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Text, ForeignKey
-from config.connection import base
+from config.connection import get_db, Base
 
-class PerguntasSemResposta(base):
+class PerguntasSemResposta(Base):
     __tablename__ = 'perguntas_sem_resposta'
 
     id = Column(Integer, primary_key=True)

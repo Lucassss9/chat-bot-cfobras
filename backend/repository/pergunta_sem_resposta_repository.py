@@ -1,15 +1,11 @@
 from model.perguntas_sem_resposta_model import PerguntasSemResposta
-from config.connection import session_local
 
-def salvar(pergunta, usuario_id):
-    session = session_local()
+def salvar(pergunta, usuario_id, db):
 
     try:
         nova_pergunta = PerguntasSemResposta(usuario_id=usuario_id, pergunta=pergunta)
-        session.add(nova_pergunta)
-        session.commit()
+        db.add(nova_pergunta)
+        db.commit()
     except Exception as e:
-        session.rollback()
+        db.rollback()
         print(e)
-    finally:
-        session.close()
