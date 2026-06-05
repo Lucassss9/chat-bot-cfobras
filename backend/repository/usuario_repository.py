@@ -1,10 +1,12 @@
 from model.usuario_model import Usuario
+import bcrypt
 
 
 def salvar_usuario(nome, email, senha, db):
     print(f"Salvando: {nome}, {email}")
     try:
-        novo_usuario = Usuario(nome=nome, email=email, senha=senha )
+        senha = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        novo_usuario = Usuario(nome=nome, email=email, senha=senha)
         db.add(novo_usuario)
         db.commit()
     except Exception as e:

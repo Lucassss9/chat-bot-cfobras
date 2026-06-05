@@ -1,5 +1,6 @@
 from repository.usuario_repository import salvar_usuario, buscar_usuario_por_email
 from exception.usuario_exception import UsuarioJaExisteError, DadosInvalidoError, CredenciaisInvalidasError
+import bcrypt
 
 def cadastrar_usuario(nome, email, senha, db):
     nome = nome.strip()
@@ -34,7 +35,9 @@ def login(email, senha, db):
     if usuario is None:
         raise CredenciaisInvalidasError("Usuário não existe. Faça o seu cadastro.")
 
-    if usuario.senha == senha:
+    hash_banco = usuario.senha
+
+    if bcrypt.checkpw(senha.encode("utf-8"), hash_banco.encode("utf-8")):
         return {"id": usuario.id, "nome": usuario.nome}
     else:
         raise CredenciaisInvalidasError("Senha incorreta")
