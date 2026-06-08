@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, Text, ForeignKey
-from config.connection import get_db, Base
+from config.connection import Base
 
 class PerguntasSemResposta(Base):
     __tablename__ = 'perguntas_sem_resposta'

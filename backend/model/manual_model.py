@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, Text
-from config.connection import get_db, Base
+from config.connection import Base
 
 class Manual(Base):
     __tablename__ = "manuais"
