@@ -3,6 +3,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from service.chat_service import processar_chat
 from config.connection import get_db
+from config.auth import usuario_atual
 
 class ChatRequest(BaseModel):
     pergunta: str
@@ -11,6 +12,6 @@ class ChatRequest(BaseModel):
 def registrar_rotas(app):
 
     @app.post("/chat")
-    def chat(request: ChatRequest, db: Session = Depends(get_db)):
+    def chat(request: ChatRequest, db: Session = Depends(get_db), token: str = Depends(usuario_atual)):
         resposta = processar_chat(pergunta=request.pergunta, usuario_id=request.usuario_id, db=db)
         return {"resposta": resposta}
