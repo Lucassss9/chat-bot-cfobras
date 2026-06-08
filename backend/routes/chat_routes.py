@@ -7,11 +7,10 @@ from config.auth import usuario_atual
 
 class ChatRequest(BaseModel):
     pergunta: str
-    usuario_id: int
 
 def registrar_rotas(app):
 
     @app.post("/chat")
-    def chat(request: ChatRequest, db: Session = Depends(get_db), token: str = Depends(usuario_atual)):
-        resposta = processar_chat(pergunta=request.pergunta, usuario_id=request.usuario_id, db=db)
+    def chat(request: ChatRequest, db: Session = Depends(get_db), usuario_id: str = Depends(usuario_atual)):
+        resposta = processar_chat(pergunta=request.pergunta, usuario_id=usuario_id, db=db)
         return {"resposta": resposta}
