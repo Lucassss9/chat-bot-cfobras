@@ -5,7 +5,7 @@ from service.ai_service import gerar_resposta
 def processar_chat(pergunta, usuario_id, db):
     manual = buscar_manual(db)
 
-    resposta = gerar_resposta(pergunta, manual)
+    resposta = gerar_resposta(pergunta, manual.conteudo)
 
     resposta_normalizada  = resposta.strip().lower()
 
