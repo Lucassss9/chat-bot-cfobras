@@ -1,6 +1,12 @@
 from repository.usuario_repository import salvar_usuario, buscar_usuario_por_email
 from exception.usuario_exception import UsuarioJaExisteError, DadosInvalidoError, CredenciaisInvalidasError
+from datetime import datetime, timedelta, timezone
+import jwt
+import os
 import bcrypt
+
+SECRET =  os.getenv("JWT_KEY")
+ALGORITMO = os.getenv("ALGORITHM")
 
 def cadastrar_usuario(nome, email, senha, db):
     nome = nome.strip()
@@ -38,7 +44,12 @@ def login(email, senha, db):
     hash_banco = usuario.senha
 
     if bcrypt.checkpw(senha.encode("utf-8"), hash_banco.encode("utf-8")):
-        return {"id": usuario.id, "nome": usuario.nome}
+        dados = {
+            "sub": str(usuario.id),
+            "exp": datetime.now(timezone.utc) + timedelta(hours=8),
+        }
+        token = jwt.encode(dados, SECRET, algorithm=ALGORITMO)
+        return {"token": token, "id": usuario.id, "nome": usuario.nome}
     else:
         raise CredenciaisInvalidasError("Senha incorreta")
 
