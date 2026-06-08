@@ -1368,8 +1368,11 @@
         try {
             const res = await fetch('http://localhost:8000/chat', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pergunta: texto, usuario_id: usuarioLogado.id })
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + usuarioLogado.token
+              },
+              body: JSON.stringify({ pergunta: texto })
             });
             const data = await res.json();
             removerDigitando();
@@ -1508,16 +1511,17 @@
        ESCALAMENTOS
     ══════════════════════════════════════════════════ */
     async function carregarEscalamentos() {
-        const lista = document.getElementById('esc-lista');
-
-        // TODO: conectar ao backend
-        // const res = await fetch('/escalamentos?usuario_id=' + usuarioLogado.id);
-        // const data = await res.json();
-        // renderizarEscalamentos(data);
-
-        // SIMULAÇÃO — remover quando conectar o backend
-        const simulado = [];
-        renderizarEscalamentos(simulado);
+        try {
+            const res = await fetch('http://localhost:8000/chat/perguntas-sem-respostas', {
+                headers: { 'Authorization': 'Bearer ' + usuarioLogado.token }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Erro ao carregar escalamentos');
+            renderizarEscalamentos(data);
+        } catch (e) {
+            console.error('Erro ao carregar escalamentos:', e);
+            renderizarEscalamentos([]);
+        }
     }
 
     function renderizarEscalamentos(items) {
