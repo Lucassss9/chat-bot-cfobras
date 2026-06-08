@@ -9,3 +9,6 @@ def salvar(pergunta, usuario_id, db):
     except Exception as e:
         db.rollback()
         print(e)
+
+def listar_perguntas(usuario_id, db):
+    return db.query(PerguntasSemResposta).all()
