@@ -8,3 +8,4 @@ requests
 PyJWT
 bcrypt
 python-dotenv
+email-validator
