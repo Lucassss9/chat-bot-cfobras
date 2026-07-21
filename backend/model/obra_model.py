@@ -10,6 +10,7 @@ class SolicitacaoObra(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
+    estado = Column(String, nullable=False, default="SP")
     tipo_filial = Column(String, nullable=False, default="existente")
     filial_nome = Column(String, nullable=False)
     filial_cnpj = Column(String, nullable=True)
@@ -17,7 +18,6 @@ class SolicitacaoObra(Base):
     filial_cidade = Column(String, nullable=True)
     filial_estado = Column(String, nullable=True)
 
-    # dados da obra
     obra_nome = Column(String, nullable=False)
     obra_codigo = Column(String, nullable=True)
     obra_email = Column(String, nullable=True)
@@ -48,8 +48,12 @@ class PessoaDaObra(Base):
 
     nome = Column(String, nullable=False)
     email = Column(String, nullable=False)
+
+
     funcao = Column(String, nullable=True)
-    tipo = Column(String, nullable=True)
+    cpf = Column(String, nullable=True)
+    terceirizado = Column(Boolean, default=False)
+
     ja_tem_acesso = Column(Boolean, default=False)
 
     solicitacao = relationship("SolicitacaoObra", back_populates="pessoas")
