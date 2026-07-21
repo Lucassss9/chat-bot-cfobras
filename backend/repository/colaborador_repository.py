@@ -1,58 +1,54 @@
-from model.usuario_model import Usuario
-import bcrypt
+from model.colaborador_model import Colaborador
 
 
-def salvar_usuario(nome, email, senha, cargo, papel, db):
+def salvar(dados, solicitante_id, db):
     try:
-        senha = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        novo_usuario = Usuario(nome=nome, email=email, senha=senha,
-                               cargo=cargo, papel=papel, ativo=True)
-        db.add(novo_usuario)
+        colaborador = Colaborador(
+            nome=dados.nome,
+            email=dados.email,
+            funcao=dados.funcao,
+            estado=dados.estado,
+            obra=dados.obra,
+            terceirizado=dados.terceirizado,
+            cpf=None if dados.terceirizado else dados.cpf,
+            data_admissao=None if dados.terceirizado else dados.data_admissao,
+            exibir_epi=False if dados.terceirizado else dados.exibir_epi,
+            solicitante_id=solicitante_id,
+        )
+        db.add(colaborador)
         db.commit()
-    except:
+        db.refresh(colaborador)
+        return colaborador
+    except Exception:
         db.rollback()
         raise
 
 
-def buscar_usuario_por_email(email, db):
-    return db.query(Usuario).filter(Usuario.email == email).first()
+def listar_por_status(status, db):
+    return db.query(Colaborador).filter(Colaborador.status == status).all()
 
 
-def buscar_usuario_por_id(usuario_id, db):
+def listar_do_solicitante(solicitante_id, db):
+    return (db.query(Colaborador)
+            .filter(Colaborador.solicitante_id == solicitante_id)
+            .order_by(Colaborador.criado_em.desc())
+            .all())
+
+
+def buscar_por_id(colaborador_id, db):
+    return db.query(Colaborador).filter(Colaborador.id == colaborador_id).first()
+
+
+def atualizar_status(colaborador_id, status, erro, db):
     try:
-        return db.query(Usuario).filter(Usuario.id == usuario_id).first()
-    except:
-        db.rollback()
-        raise
-
-
-def listar_usuarios(db):
-    return db.query(Usuario).order_by(Usuario.nome).all()
-
-
-def atualizar_papel(usuario_id, papel, db):
-    try:
-        usuario = buscar_usuario_por_id(usuario_id, db)
-        if usuario is None:
+        colaborador = buscar_por_id(colaborador_id, db)
+        if colaborador is None:
             return None
-        usuario.papel = papel
+        colaborador.status = status
+        colaborador.erro = erro
         db.commit()
-        db.refresh(usuario)
-        return usuario
-    except:
-        db.rollback()
-        raise
-
-
-def atualizar_ativo(usuario_id, ativo, db):
-    try:
-        usuario = buscar_usuario_por_id(usuario_id, db)
-        if usuario is None:
-            return None
-        usuario.ativo = ativo
-        db.commit()
-        db.refresh(usuario)
-        return usuario
-    except:
+        db.refresh(colaborador)
+        return colaborador
+    except Exception:
         db.rollback()
         raise

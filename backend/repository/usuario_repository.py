@@ -1,23 +1,57 @@
 from model.usuario_model import Usuario
 import bcrypt
 
-def salvar_usuario(nome, email, senha, db):
-    print(f"Salvando: {nome}, {email}")
+
+def salvar_usuario(nome, email, senha, cargo, papel, db):
     try:
         senha = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        novo_usuario = Usuario(nome=nome, email=email, senha=senha)
+        novo_usuario = Usuario(nome=nome, email=email, senha=senha,
+                               cargo=cargo, papel=papel, ativo=True)
         db.add(novo_usuario)
         db.commit()
     except:
         db.rollback()
         raise
 
+
 def buscar_usuario_por_email(email, db):
-     return db.query(Usuario).filter(Usuario.email == email).first()
+    return db.query(Usuario).filter(Usuario.email == email).first()
+
 
 def buscar_usuario_por_id(usuario_id, db):
     try:
-        usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        return db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    except:
+        db.rollback()
+        raise
+
+
+def listar_usuarios(db):
+    return db.query(Usuario).order_by(Usuario.nome).all()
+
+
+def atualizar_papel(usuario_id, papel, db):
+    try:
+        usuario = buscar_usuario_por_id(usuario_id, db)
+        if usuario is None:
+            return None
+        usuario.papel = papel
+        db.commit()
+        db.refresh(usuario)
+        return usuario
+    except:
+        db.rollback()
+        raise
+
+
+def atualizar_ativo(usuario_id, ativo, db):
+    try:
+        usuario = buscar_usuario_por_id(usuario_id, db)
+        if usuario is None:
+            return None
+        usuario.ativo = ativo
+        db.commit()
+        db.refresh(usuario)
         return usuario
     except:
         db.rollback()
