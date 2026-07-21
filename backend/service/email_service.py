@@ -1,11 +1,13 @@
 import os
-import requests
+import smtplib
+from email.message import EmailMessage
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER")         
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+NOME_REMETENTE = os.getenv("NOME_REMETENTE", "CF Obras")
 
-EMAIL_FROM = os.getenv("EMAIL_FROM", "CF Obras <onboarding@resend.dev>")
-
-URL_RESEND = "https://api.resend.com/emails"
 SENHA_INICIAL = "123Mudar@"
 URL_CF_OBRAS = "https://manager.cfobras.com.br"
 
@@ -15,29 +17,21 @@ def _enviar(destinatario, assunto, corpo):
         print("E-mail não enviado: destinatário vazio")
         return False
 
-    if not RESEND_API_KEY:
-        print(f"RESEND_API_KEY não configurada. E-mail que iria para {destinatario}: {assunto}")
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print(f"SMTP não configurado. E-mail que iria para {destinatario}: {assunto}")
         return False
 
     try:
-        resposta = requests.post(
-            URL_RESEND,
-            headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "from": EMAIL_FROM,
-                "to": [destinatario],
-                "subject": assunto,
-                "text": corpo,
-            },
-            timeout=20,
-        )
+        mensagem = EmailMessage()
+        mensagem["Subject"] = assunto
+        mensagem["From"] = f"{NOME_REMETENTE} <{SMTP_USER}>"
+        mensagem["To"] = destinatario
+        mensagem.set_content(corpo)
 
-        if resposta.status_code >= 400:
-            print(f"Resend recusou o e-mail para {destinatario}: {resposta.status_code} {resposta.text}")
-            return False
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as servidor:
+            servidor.starttls()
+            servidor.login(SMTP_USER, SMTP_PASSWORD)
+            servidor.send_message(mensagem)
 
         print(f"E-mail enviado para {destinatario}: {assunto}")
         return True
