@@ -8,43 +8,67 @@ page_id = os.getenv("NOTION_PAGE_ID")
 
 notion = Client(auth=notion_token, timeout_ms=30000)
 
-def buscar_pagina(id_alvo=None):
+TIPOS_DE_TEXTO = ["paragraph", "heading_1", "heading_2", "heading_3",
+                  "bulleted_list_item", "numbered_list_item", "callout",
+                  "quote", "toggle", "to_do"]
+
+
+def _extrair_texto(rich_text):
+    linha = ""
+    for pedaco in rich_text:
+        linha += pedaco.get("plain_text", "")
+    return linha
+
+
+def _extrair_linha_da_tabela(bloco):
+    celulas = bloco.get("table_row", {}).get("cells", [])
+    textos = []
+    for celula in celulas:
+        textos.append(_extrair_texto(celula))
+    return " | ".join(textos)
+
+
+def buscar_pagina(id_alvo=None, profundidade=0):
+    if profundidade > 10:
+        return ""
+
     try:
-        lista_de_subpaginas = []
-        tipos_de_texto = ["paragraph", "heading_1", "heading_2", "heading_3", "bulleted_list_item", "numbered_list_item", "callout", "quote"]
         texto_da_pagina = ""
-
         id_atual = page_id if id_alvo is None else id_alvo
-        
-        response = notion.blocks.children.list(block_id=id_atual)
-        paginas = response.get("results", [])
+        cursor = None
 
-        for bloco in paginas:
-            id_do_bloco = bloco.get("id")
-            tipo_do_bloco = bloco.get("type")
+        while True:
+            response = notion.blocks.children.list(block_id=id_atual, start_cursor=cursor)
+            blocos = response.get("results", [])
 
-            if tipo_do_bloco == "child_page":
-                titulo_da_pagina = bloco.get("child_page", {}).get("title")
-                lista_de_subpaginas.append({"id": id_do_bloco, "titulo": titulo_da_pagina})
+            for bloco in blocos:
+                id_do_bloco = bloco.get("id")
+                tipo_do_bloco = bloco.get("type")
 
-                try:
-                    texto_da_pagina += buscar_pagina(id_alvo=id_do_bloco)
-                except Exception as erro_sub:
-                    print(f"Erro ao ler a subpágina {titulo_da_pagina}: {erro_sub}")
-
-            if tipo_do_bloco in tipos_de_texto:
-                linha_completa = ""
-                texto = bloco.get(tipo_do_bloco, {}).get("rich_text", [])
-
-                if texto == []:
+                if tipo_do_bloco == "table_row":
+                    linha = _extrair_linha_da_tabela(bloco)
+                    if linha.strip():
+                        texto_da_pagina += linha + "\n"
                     continue
-                
-                for pedacos in texto:
-                    linha_completa += pedacos.get("plain_text")
 
-                texto_da_pagina += linha_completa + "\n"
-        
+                if tipo_do_bloco in TIPOS_DE_TEXTO:
+                    linha = _extrair_texto(bloco.get(tipo_do_bloco, {}).get("rich_text", []))
+                    if linha.strip():
+                        texto_da_pagina += linha + "\n"
+
+                if bloco.get("has_children"):
+                    try:
+                        texto_da_pagina += buscar_pagina(id_alvo=id_do_bloco,
+                                                         profundidade=profundidade + 1)
+                    except Exception as erro_filho:
+                        print(f"Erro ao ler os filhos do bloco {id_do_bloco}: {erro_filho}")
+
+            if not response.get("has_more"):
+                break
+            cursor = response.get("next_cursor")
+
         return texto_da_pagina
+
     except Exception as erro:
         print(f"O erro real que aconteceu na página foi: {erro}")
         return ""
