@@ -1,13 +1,11 @@
 import os
-import smtplib
-from email.message import EmailMessage
+import requests
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER")         
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
 NOME_REMETENTE = os.getenv("NOME_REMETENTE", "CF Obras")
 
+URL_BREVO = "https://api.brevo.com/v3/smtp/email"
 SENHA_INICIAL = "123Mudar@"
 URL_CF_OBRAS = "https://manager.cfobras.com.br"
 
@@ -17,21 +15,31 @@ def _enviar(destinatario, assunto, corpo):
         print("E-mail não enviado: destinatário vazio")
         return False
 
-    if not SMTP_USER or not SMTP_PASSWORD:
-        print(f"SMTP não configurado. E-mail que iria para {destinatario}: {assunto}")
+    if not BREVO_API_KEY or not EMAIL_REMETENTE:
+        print(f"Brevo não configurado. E-mail que iria para {destinatario}: {assunto}")
         return False
 
     try:
-        mensagem = EmailMessage()
-        mensagem["Subject"] = assunto
-        mensagem["From"] = f"{NOME_REMETENTE} <{SMTP_USER}>"
-        mensagem["To"] = destinatario
-        mensagem.set_content(corpo)
+        resposta = requests.post(
+            URL_BREVO,
+            headers={
+                "api-key": BREVO_API_KEY,
+                "Content-Type": "application/json",
+                "accept": "application/json",
+            },
+            json={
+                "sender": {"name": NOME_REMETENTE, "email": EMAIL_REMETENTE},
+                "to": [{"email": destinatario}],
+                "subject": assunto,
+                "textContent": corpo,
+            },
+            timeout=20,
+        )
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as servidor:
-            servidor.starttls()
-            servidor.login(SMTP_USER, SMTP_PASSWORD)
-            servidor.send_message(mensagem)
+        if resposta.status_code >= 400:
+            print(f"Brevo recusou o e-mail para {destinatario}: "
+                  f"{resposta.status_code} {resposta.text}")
+            return False
 
         print(f"E-mail enviado para {destinatario}: {assunto}")
         return True
