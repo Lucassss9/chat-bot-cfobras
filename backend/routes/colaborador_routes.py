@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from config.auth import usuario_atual
+from config.auth import usuario_atual, exigir_papel
 from config.connection import get_db
 from repository.colaborador_repository import (
     salvar,
@@ -58,7 +58,8 @@ def _para_dict(colaborador):
 @router.post("/colaborador/cadastrar")
 def cadastrar(dados: ColaboradorCadastro,
               db: Session = Depends(get_db),
-              usuario_id: str = Depends(usuario_atual)):
+              usuario_id: str = Depends(usuario_atual),
+              papel: str = Depends(exigir_papel("solicitante", "admin"))):
 
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
@@ -74,7 +75,7 @@ def cadastrar(dados: ColaboradorCadastro,
 
 @router.get("/colaborador/pendentes")
 def pendentes(db: Session = Depends(get_db),
-              usuario_id: str = Depends(usuario_atual)):
+              papel: str = Depends(exigir_papel("admin"))):
     """O robô Java consome esta rota para saber o que cadastrar."""
     return [_para_dict(c) for c in listar_por_status("pendente", db)]
 
@@ -89,7 +90,7 @@ def meus(db: Session = Depends(get_db),
 def mudar_status(colaborador_id: int,
                  dados: StatusUpdate,
                  db: Session = Depends(get_db),
-                 usuario_id: str = Depends(usuario_atual)):
+                 papel: str = Depends(exigir_papel("admin"))):
     """O robô avisa aqui se deu certo ou não."""
     if dados.status not in STATUS_VALIDOS:
         raise HTTPException(status_code=400,
