@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from config.auth import usuario_atual, exigir_papel
+from config.auth import usuario_atual, papel_atual, exigir_papel
 from config.connection import get_db
 from repository.colaborador_repository import (
     salvar,
     listar_por_status,
     listar_do_solicitante,
+    listar_todos,
     atualizar_status,
 )
 
@@ -52,6 +53,7 @@ def _para_dict(colaborador):
         "exibir_epi": colaborador.exibir_epi,
         "status": colaborador.status,
         "erro": colaborador.erro,
+        "solicitante": getattr(colaborador, "solicitante_nome", None),
     }
 
 
@@ -82,7 +84,11 @@ def pendentes(db: Session = Depends(get_db),
 
 @router.get("/colaborador/meus")
 def meus(db: Session = Depends(get_db),
-         usuario_id: str = Depends(usuario_atual)):
+         usuario_id: str = Depends(usuario_atual),
+         papel: str = Depends(papel_atual)):
+    """Admin vê tudo de todo mundo; solicitante vê só o que ele pediu."""
+    if papel == "admin":
+        return [_para_dict(c) for c in listar_todos(db)]
     return [_para_dict(c) for c in listar_do_solicitante(int(usuario_id), db)]
 
 

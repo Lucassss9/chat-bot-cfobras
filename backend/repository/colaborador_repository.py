@@ -1,4 +1,5 @@
 from model.colaborador_model import Colaborador
+from model.usuario_model import Usuario
 
 
 def salvar(dados, solicitante_id, db):
@@ -26,6 +27,20 @@ def salvar(dados, solicitante_id, db):
 
 def listar_por_status(status, db):
     return db.query(Colaborador).filter(Colaborador.status == status).all()
+
+
+def listar_todos(db):
+    """Só para admin: tudo, de todo mundo, com o nome de quem solicitou."""
+    resultados = (db.query(Colaborador, Usuario.nome)
+                  .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
+                  .order_by(Colaborador.criado_em.desc())
+                  .all())
+
+    lista = []
+    for colaborador, nome_do_solicitante in resultados:
+        colaborador.solicitante_nome = nome_do_solicitante
+        lista.append(colaborador)
+    return lista
 
 
 def listar_do_solicitante(solicitante_id, db):
