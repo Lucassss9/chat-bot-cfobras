@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
 from config.connection import Base
 
 
@@ -13,13 +13,11 @@ class Colaborador(Base):
     funcao = Column(String, nullable=False)
     estado = Column(String, nullable=False)
     obra = Column(String, nullable=False)
-
     terceirizado = Column(Boolean, default=False)
     cpf = Column(String, nullable=True)
-    data_admissao = Column(Date, nullable=True)
-    exibir_epi = Column(Boolean, default=False)
 
     status = Column(String, default="pendente")
+    motivo = Column(Text, nullable=True)
     erro = Column(Text, nullable=True)
     solicitante_id = Column(Integer, ForeignKey("usuario.id"))
     criado_em = Column(DateTime, default=datetime.datetime.now)

@@ -1,7 +1,6 @@
-from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -12,14 +11,21 @@ from repository.colaborador_repository import (
     listar_por_status,
     listar_do_solicitante,
     listar_todos,
+    buscar_por_id,
+    buscar_email_do_solicitante,
     atualizar_status,
+    atualizar_decisao,
+)
+from service.email_service import (
+    avisar_recusa,
+    avisar_cadastro_concluido,
+    avisar_erro_no_robo,
 )
 
 router = APIRouter()
 
 ESTADOS = ["SP", "RJ"]
-STATUS_VALIDOS = ["pendente", "processando", "concluido", "erro"]
-
+STATUS_DO_ROBO = ["processando", "concluido", "erro"]
 
 class ColaboradorCadastro(BaseModel):
     nome: str
@@ -29,14 +35,13 @@ class ColaboradorCadastro(BaseModel):
     obra: str
     terceirizado: bool = False
     cpf: Optional[str] = None
-    data_admissao: Optional[date] = None
-    exibir_epi: bool = False
-
 
 class StatusUpdate(BaseModel):
     status: str
     erro: Optional[str] = None
 
+class Recusa(BaseModel):
+    motivo: str
 
 def _para_dict(colaborador):
     return {
@@ -48,10 +53,8 @@ def _para_dict(colaborador):
         "obra": colaborador.obra,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
-        # o robô digita no formato DD/MM/AAAA
-        "data_admissao": colaborador.data_admissao.strftime("%d/%m/%Y") if colaborador.data_admissao else None,
-        "exibir_epi": colaborador.exibir_epi,
         "status": colaborador.status,
+        "motivo": colaborador.motivo,
         "erro": colaborador.erro,
         "solicitante": getattr(colaborador, "solicitante_nome", None),
     }
@@ -66,20 +69,12 @@ def cadastrar(dados: ColaboradorCadastro,
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
 
-    if not dados.terceirizado and (not dados.cpf or dados.data_admissao is None):
+    if not dados.terceirizado and not dados.cpf:
         raise HTTPException(status_code=400,
-                            detail="CPF e data de admissão são obrigatórios para colaborador Cury")
+                            detail="CPF é obrigatório para colaborador Cury")
 
     colaborador = salvar(dados, int(usuario_id), db)
-    return {"mensagem": "Solicitação registrada. O robô vai processar em breve.",
-            "id": colaborador.id}
-
-
-@router.get("/colaborador/pendentes")
-def pendentes(db: Session = Depends(get_db),
-              papel: str = Depends(exigir_papel("admin"))):
-    """O robô Java consome esta rota para saber o que cadastrar."""
-    return [_para_dict(c) for c in listar_por_status("pendente", db)]
+    return {"mensagem": "Solicitação enviada para aprovação.", "id": colaborador.id}
 
 
 @router.get("/colaborador/meus")
@@ -92,18 +87,71 @@ def meus(db: Session = Depends(get_db),
     return [_para_dict(c) for c in listar_do_solicitante(int(usuario_id), db)]
 
 
+@router.patch("/colaborador/{colaborador_id}/aprovar")
+def aprovar(colaborador_id: int,
+            db: Session = Depends(get_db),
+            papel: str = Depends(exigir_papel("admin"))):
+    """Libera a solicitação para o robô processar."""
+    colaborador = buscar_por_id(colaborador_id, db)
+    if colaborador is None:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+
+    if colaborador.status != "pendente":
+        raise HTTPException(status_code=400,
+                            detail=f"Só dá para aprovar quem está pendente (está '{colaborador.status}').")
+
+    return _para_dict(atualizar_decisao(colaborador_id, "aprovado", None, db))
+
+@router.patch("/colaborador/{colaborador_id}/recusar")
+def recusar(colaborador_id: int,
+            dados: Recusa,
+            tarefas: BackgroundTasks,
+            db: Session = Depends(get_db),
+            papel: str = Depends(exigir_papel("admin"))):
+    if not dados.motivo.strip():
+        raise HTTPException(status_code=400, detail="Explique o motivo da recusa.")
+
+    colaborador = buscar_por_id(colaborador_id, db)
+    if colaborador is None:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+
+    if colaborador.status != "pendente":
+        raise HTTPException(status_code=400,
+                            detail=f"Só dá para recusar quem está pendente (está '{colaborador.status}').")
+
+    colaborador = atualizar_decisao(colaborador_id, "recusado", dados.motivo.strip(), db)
+
+    email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
+    tarefas.add_task(avisar_recusa, email_solicitante, colaborador.nome, colaborador.motivo)
+
+    return _para_dict(colaborador)
+
+@router.get("/colaborador/pendentes")
+def pendentes(db: Session = Depends(get_db),
+              papel: str = Depends(exigir_papel("admin"))):
+    """O robô Java consome esta rota: só o que já foi aprovado."""
+    return [_para_dict(c) for c in listar_por_status("aprovado", db)]
+
+
 @router.patch("/colaborador/{colaborador_id}/status")
 def mudar_status(colaborador_id: int,
                  dados: StatusUpdate,
+                 tarefas: BackgroundTasks,
                  db: Session = Depends(get_db),
                  papel: str = Depends(exigir_papel("admin"))):
-    """O robô avisa aqui se deu certo ou não."""
-    if dados.status not in STATUS_VALIDOS:
+    if dados.status not in STATUS_DO_ROBO:
         raise HTTPException(status_code=400,
-                            detail=f"Status deve ser um de: {', '.join(STATUS_VALIDOS)}")
+                            detail=f"Status deve ser um de: {', '.join(STATUS_DO_ROBO)}")
 
     colaborador = atualizar_status(colaborador_id, dados.status, dados.erro, db)
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
+
+    if dados.status == "concluido":
+        tarefas.add_task(avisar_cadastro_concluido, colaborador.email, colaborador.nome)
+
+    if dados.status == "erro":
+        email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
+        tarefas.add_task(avisar_erro_no_robo, email_solicitante, colaborador.nome, dados.erro)
 
     return _para_dict(colaborador)
