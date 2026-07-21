@@ -20,11 +20,13 @@ class PessoaEntrada(BaseModel):
     nome: str
     email: EmailStr
     funcao: Optional[str] = None
-    tipo: Optional[str] = None
+    cpf: Optional[str] = None
+    terceirizado: bool = False
     ja_tem_acesso: bool = False
 
 
 class ObraEntrada(BaseModel):
+    estado: str = "SP"
     tipo_filial: str = "existente"
     filial_nome: str
     filial_cnpj: Optional[str] = None
@@ -54,6 +56,7 @@ class Recusa(BaseModel):
 def _para_dict(s):
     return {
         "id": s.id,
+        "estado": s.estado,
         "tipo_filial": s.tipo_filial,
         "filial_nome": s.filial_nome,
         "filial_cnpj": s.filial_cnpj,
@@ -77,7 +80,8 @@ def _para_dict(s):
             "nome": p.nome,
             "email": p.email,
             "funcao": p.funcao,
-            "tipo": p.tipo,
+            "cpf": p.cpf,
+            "terceirizado": p.terceirizado,
             "ja_tem_acesso": p.ja_tem_acesso,
         } for p in s.pessoas],
     }
@@ -92,8 +96,21 @@ def solicitar(dados: ObraEntrada,
     if not dados.pessoas:
         raise HTTPException(status_code=400, detail="Informe ao menos uma pessoa para a obra.")
 
+    if dados.estado not in ["SP", "RJ"]:
+        raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
+
     if dados.tipo_filial == "nova" and not dados.filial_cnpj:
         raise HTTPException(status_code=400, detail="Filial nova precisa do CNPJ.")
+
+    for pessoa in dados.pessoas:
+        if not pessoa.ja_tem_acesso and not pessoa.funcao:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{pessoa.nome} não tem acesso ainda — informe a função.")
+        if not pessoa.ja_tem_acesso and not pessoa.terceirizado and not pessoa.cpf:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{pessoa.nome} precisa de CPF (ou marque como terceirizado).")
 
     try:
         solicitacao = salvar(dados, int(usuario_id), db)

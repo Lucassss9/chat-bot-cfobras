@@ -4,7 +4,6 @@ from model.usuario_model import Usuario
 
 LIMITE_PDF = 5 * 1024 * 1024   # 5 MB
 
-
 def salvar(dados, solicitante_id, db):
     try:
         arquivo = None
@@ -14,6 +13,7 @@ def salvar(dados, solicitante_id, db):
                 raise ValueError("A ficha cadastral passa de 5 MB.")
 
         solicitacao = SolicitacaoObra(
+            estado=dados.estado,
             tipo_filial=dados.tipo_filial,
             filial_nome=dados.filial_nome,
             filial_cnpj=dados.filial_cnpj,
@@ -37,8 +37,9 @@ def salvar(dados, solicitante_id, db):
             solicitacao.pessoas.append(PessoaDaObra(
                 nome=pessoa.nome,
                 email=pessoa.email,
-                funcao=pessoa.funcao,
-                tipo=pessoa.tipo,
+                funcao=None if pessoa.ja_tem_acesso else pessoa.funcao,
+                cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
+                terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
             ))
 
