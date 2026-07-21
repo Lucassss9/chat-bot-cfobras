@@ -1,13 +1,11 @@
 import os
-import smtplib
-from email.message import EmailMessage
+import requests
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-SMTP_FROM = os.getenv("SMTP_FROM") or SMTP_USER
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
+EMAIL_FROM = os.getenv("EMAIL_FROM", "CF Obras <onboarding@resend.dev>")
+
+URL_RESEND = "https://api.resend.com/emails"
 SENHA_INICIAL = "123Mudar@"
 URL_CF_OBRAS = "https://manager.cfobras.com.br"
 
@@ -17,21 +15,29 @@ def _enviar(destinatario, assunto, corpo):
         print("E-mail não enviado: destinatário vazio")
         return False
 
-    if not SMTP_USER or not SMTP_PASSWORD:
-        print(f"SMTP não configurado. E-mail que seria enviado para {destinatario}: {assunto}")
+    if not RESEND_API_KEY:
+        print(f"RESEND_API_KEY não configurada. E-mail que iria para {destinatario}: {assunto}")
         return False
 
     try:
-        mensagem = EmailMessage()
-        mensagem["Subject"] = assunto
-        mensagem["From"] = SMTP_FROM
-        mensagem["To"] = destinatario
-        mensagem.set_content(corpo)
+        resposta = requests.post(
+            URL_RESEND,
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": EMAIL_FROM,
+                "to": [destinatario],
+                "subject": assunto,
+                "text": corpo,
+            },
+            timeout=20,
+        )
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as servidor:
-            servidor.starttls()
-            servidor.login(SMTP_USER, SMTP_PASSWORD)
-            servidor.send_message(mensagem)
+        if resposta.status_code >= 400:
+            print(f"Resend recusou o e-mail para {destinatario}: {resposta.status_code} {resposta.text}")
+            return False
 
         print(f"E-mail enviado para {destinatario}: {assunto}")
         return True
