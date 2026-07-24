@@ -1,6 +1,6 @@
 from model.colaborador_model import Colaborador
 from model.usuario_model import Usuario
-from util.texto_util import normalizar_nome, normalizar_email
+from service.texto_util import normalizar_nome, normalizar_email
 
 
 def salvar(dados, solicitante_id, db):
