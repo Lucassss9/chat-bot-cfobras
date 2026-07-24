@@ -15,6 +15,9 @@ from repository.colaborador_repository import (
     buscar_email_do_solicitante,
     atualizar_status,
     atualizar_decisao,
+    existe_email,
+    existe_cpf,
+    editar_e_reenviar,
 )
 from service.email_service import (
     avisar_recusa,
@@ -57,6 +60,8 @@ def _para_dict(colaborador):
         "motivo": colaborador.motivo,
         "erro": colaborador.erro,
         "solicitante": getattr(colaborador, "solicitante_nome", None),
+        "email_repetido": getattr(colaborador, "email_repetido", False),
+        "cpf_repetido": getattr(colaborador, "cpf_repetido", False),
     }
 
 
@@ -77,14 +82,54 @@ def cadastrar(dados: ColaboradorCadastro,
     return {"mensagem": "Solicitação enviada para aprovação.", "id": colaborador.id}
 
 
+@router.get("/colaborador/checar")
+def checar(email: str = "", cpf: str = "",
+           db: Session = Depends(get_db),
+           papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    """O formulário chama isto para avisar o solicitante antes de enviar."""
+    return {
+        "email_repetido": existe_email(email, db),
+        "cpf_repetido": existe_cpf(cpf, db),
+    }
+
+
 @router.get("/colaborador/meus")
 def meus(db: Session = Depends(get_db),
          usuario_id: str = Depends(usuario_atual),
          papel: str = Depends(papel_atual)):
     """Admin vê tudo de todo mundo; solicitante vê só o que ele pediu."""
     if papel == "admin":
-        return [_para_dict(c) for c in listar_todos(db)]
+        todos = listar_todos(db)
+        for c in todos:
+            if c.status == "pendente":
+                c.email_repetido = existe_email(c.email, db, ignorar_id=c.id)
+                c.cpf_repetido = (not c.terceirizado) and existe_cpf(c.cpf, db, ignorar_id=c.id)
+        return [_para_dict(c) for c in todos]
     return [_para_dict(c) for c in listar_do_solicitante(int(usuario_id), db)]
+
+
+@router.patch("/colaborador/{colaborador_id}/editar")
+def editar(colaborador_id: int,
+           dados: ColaboradorCadastro,
+           db: Session = Depends(get_db),
+           usuario_id: str = Depends(usuario_atual),
+           papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    """Reenvia um cadastro recusado com os dados corrigidos."""
+    if dados.estado not in ESTADOS:
+        raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
+    if not dados.terceirizado and not dados.cpf:
+        raise HTTPException(status_code=400, detail="CPF é obrigatório para colaborador Cury")
+
+    resultado = editar_e_reenviar(colaborador_id, dados, int(usuario_id), db)
+
+    if resultado == "nao_encontrado":
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    if resultado == "nao_e_seu":
+        raise HTTPException(status_code=403, detail="Você só pode editar as suas solicitações.")
+    if resultado == "nao_recusado":
+        raise HTTPException(status_code=400, detail="Só dá para editar uma solicitação recusada.")
+
+    return {"mensagem": "Solicitação corrigida e reenviada para aprovação.", "id": resultado.id}
 
 
 @router.patch("/colaborador/{colaborador_id}/aprovar")

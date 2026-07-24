@@ -1,6 +1,7 @@
 import base64
 from model.obra_model import SolicitacaoObra, PessoaDaObra
 from model.usuario_model import Usuario
+from service.texto_util import normalizar_nome, normalizar_email
 
 LIMITE_PDF = 5 * 1024 * 1024   # 5 MB
 
@@ -35,8 +36,8 @@ def salvar(dados, solicitante_id, db):
 
         for pessoa in dados.pessoas:
             solicitacao.pessoas.append(PessoaDaObra(
-                nome=pessoa.nome,
-                email=pessoa.email,
+                nome=normalizar_nome(pessoa.nome),
+                email=normalizar_email(pessoa.email),
                 funcao=None if pessoa.ja_tem_acesso else pessoa.funcao,
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
