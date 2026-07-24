@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
@@ -28,14 +28,15 @@ from service.email_service import (
 router = APIRouter()
 
 ESTADOS = ["SP", "RJ"]
-STATUS_DO_ROBO = ["processando", "concluido", "erro"]
+STATUS_DO_ROBO = ["processando", "cadastrado", "vinculado", "erro"]
 
 class ColaboradorCadastro(BaseModel):
     nome: str
     email: EmailStr
     funcao: str
     estado: str
-    obra: str
+    obras: List[str]                 # uma ou mais CCISAs
+    observacao: Optional[str] = None
     terceirizado: bool = False
     cpf: Optional[str] = None
 
@@ -54,6 +55,8 @@ def _para_dict(colaborador):
         "funcao": colaborador.funcao,
         "estado": colaborador.estado,
         "obra": colaborador.obra,
+        "obras": colaborador.obra.split(" ; ") if colaborador.obra else [],
+        "observacao": colaborador.observacao,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
         "status": colaborador.status,
@@ -78,6 +81,10 @@ def cadastrar(dados: ColaboradorCadastro,
         raise HTTPException(status_code=400,
                             detail="CPF é obrigatório para colaborador Cury")
 
+    if not dados.obras:
+        raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
+
+    dados.obra = " ; ".join(dados.obras)
     colaborador = salvar(dados, int(usuario_id), db)
     return {"mensagem": "Solicitação enviada para aprovação.", "id": colaborador.id}
 
@@ -120,6 +127,10 @@ def editar(colaborador_id: int,
     if not dados.terceirizado and not dados.cpf:
         raise HTTPException(status_code=400, detail="CPF é obrigatório para colaborador Cury")
 
+    if not dados.obras:
+        raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
+
+    dados.obra = " ; ".join(dados.obras)
     resultado = editar_e_reenviar(colaborador_id, dados, int(usuario_id), db)
 
     if resultado == "nao_encontrado":

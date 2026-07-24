@@ -12,7 +12,8 @@ class Colaborador(Base):
     email = Column(String, nullable=False)
     funcao = Column(String, nullable=False)
     estado = Column(String, nullable=False)
-    obra = Column(String, nullable=False)
+    obra = Column(String, nullable=False)       
+    observacao = Column(Text, nullable=True)
     terceirizado = Column(Boolean, default=False)
     cpf = Column(String, nullable=True)
 

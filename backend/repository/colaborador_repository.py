@@ -1,6 +1,6 @@
 from model.colaborador_model import Colaborador
 from model.usuario_model import Usuario
-from service.texto_util import normalizar_nome, normalizar_email
+from util.texto_util import normalizar_nome, normalizar_email
 
 
 def salvar(dados, solicitante_id, db):
@@ -11,6 +11,7 @@ def salvar(dados, solicitante_id, db):
             funcao=dados.funcao,
             estado=dados.estado,
             obra=dados.obra,
+            observacao=(dados.observacao or None),
             terceirizado=dados.terceirizado,
             cpf=None if dados.terceirizado else dados.cpf,
             solicitante_id=solicitante_id,
@@ -25,7 +26,6 @@ def salvar(dados, solicitante_id, db):
 
 
 def existe_email(email, db, ignorar_id=None):
-    """Já há solicitação com este e-mail (fora as recusadas)?"""
     email = (email or "").strip().lower()
     if not email:
         return False
@@ -50,8 +50,6 @@ def existe_cpf(cpf, db, ignorar_id=None):
 
 
 def editar_e_reenviar(colaborador_id, dados, solicitante_id, db):
-    """Reaproveita um cadastro RECUSADO: atualiza os dados e volta para pendente.
-    Só o próprio solicitante pode, e só se estiver recusado."""
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
@@ -66,6 +64,7 @@ def editar_e_reenviar(colaborador_id, dados, solicitante_id, db):
         colaborador.funcao = dados.funcao
         colaborador.estado = dados.estado
         colaborador.obra = dados.obra
+        colaborador.observacao = dados.observacao or None
         colaborador.terceirizado = dados.terceirizado
         colaborador.cpf = None if dados.terceirizado else dados.cpf
         colaborador.status = "pendente"
@@ -84,7 +83,6 @@ def listar_por_status(status, db):
 
 
 def listar_todos(db):
-    """Só para admin: tudo, de todo mundo, com o nome de quem solicitou."""
     resultados = (db.query(Colaborador, Usuario.nome, Usuario.email)
                   .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
                   .order_by(Colaborador.criado_em.desc())
@@ -130,7 +128,6 @@ def atualizar_status(colaborador_id, status, erro, db):
 
 
 def atualizar_decisao(colaborador_id, status, motivo, db):
-    """Usado quando o admin aprova ou recusa."""
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
