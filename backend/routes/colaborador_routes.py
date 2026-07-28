@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from config.connection import get_db
 from repository.colaborador_repository import (
     salvar,
     listar_por_status,
+    listar_por_dia,
     listar_do_solicitante,
     listar_todos,
     buscar_por_id,
@@ -107,6 +108,7 @@ def cadastrar(dados: ColaboradorCadastro,
     obra_texto = " ; ".join(dados.obras)
     colaborador = salvar(dados, obra_texto, int(usuario_id), db)
 
+    # quem já tem acesso não passa pelo robô: entra direto como "cadastrado" (falta vincular)
     if dados.ja_tem_acesso:
         from repository.colaborador_repository import atualizar_status
         atualizar_status(colaborador.id, "cadastrado", None, db)
@@ -117,6 +119,7 @@ def cadastrar(dados: ColaboradorCadastro,
 def checar(email: str = "", cpf: str = "",
            db: Session = Depends(get_db),
            papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    """O formulário chama isto para avisar o solicitante antes de enviar."""
     return {
         "email_repetido": existe_email(email, db),
         "cpf_repetido": existe_cpf(cpf, db),
@@ -144,6 +147,7 @@ def editar(colaborador_id: int,
            db: Session = Depends(get_db),
            usuario_id: str = Depends(usuario_atual),
            papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    """Reenvia um cadastro recusado com os dados corrigidos."""
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
     if not dados.obras:
@@ -156,7 +160,7 @@ def editar(colaborador_id: int,
             raise HTTPException(status_code=400, detail="CPF é obrigatório para colaborador Cury")
 
     obra_texto = " ; ".join(dados.obras)
-    resultado = editar_e_reenviar(colaborador_id, dados, obra_texto, int(usuario_id), db)
+    resultado = editar_e_reenviar(colaborador_id, dados, obra_texto, int(usuario_id), db, eh_admin=(papel == "admin"))
 
     if resultado == "nao_encontrado":
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
@@ -217,6 +221,7 @@ def recusar(colaborador_id: int,
 @router.get("/colaborador/pendentes")
 def pendentes(db: Session = Depends(get_db),
               papel: str = Depends(exigir_papel("admin"))):
+    """O robô Java consome esta rota: só o que já foi aprovado."""
     return [_para_dict(c) for c in listar_por_status("aprovado", db)]
 
 
@@ -242,3 +247,47 @@ def mudar_status(colaborador_id: int,
         tarefas.add_task(avisar_erro_no_robo, email_solicitante, colaborador.nome, dados.erro)
 
     return _para_dict(colaborador)
+
+
+@router.get("/colaborador/relatorio")
+def relatorio(data: str = "",
+              db: Session = Depends(get_db),
+              papel: str = Depends(exigir_papel("admin"))):
+    """Baixa um CSV com os cadastros do dia informado (YYYY-MM-DD). Vazio = hoje."""
+    from datetime import datetime, timedelta
+
+    try:
+        if data:
+            inicio = datetime.strptime(data, "%Y-%m-%d")
+        else:
+            agora = datetime.now()
+            inicio = datetime(agora.year, agora.month, agora.day)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data invalida. Use AAAA-MM-DD.")
+
+    fim = inicio + timedelta(days=1)
+    registros = listar_por_dia(inicio, fim, db)
+
+    linhas = ["DATA/HORA;NOME;EMAIL;CPF;FUNCAO;PERFIL;OBRAS;STATUS;MOTIVO;ERRO"]
+    for c in registros:
+        campos = [
+            c.criado_em.strftime("%d/%m/%Y %H:%M") if c.criado_em else "",
+            c.nome or "",
+            c.email or "",
+            c.cpf or "",
+            c.funcao or "",
+            c.perfil or "",
+            (c.obra or "").replace(";", ","),
+            c.status or "",
+            (c.motivo or "").replace(";", ",").replace("\n", " "),
+            (c.erro or "").replace(";", ",").replace("\n", " "),
+        ]
+        linhas.append(";".join(campos))
+
+    conteudo = "\ufeff" + "\n".join(linhas)
+    nome_arquivo = f"relatorio_{inicio.strftime('%Y-%m-%d')}.csv"
+    return Response(
+        content=conteudo,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'},
+    )

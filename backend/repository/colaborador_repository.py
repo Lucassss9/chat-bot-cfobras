@@ -27,6 +27,7 @@ def salvar(dados, obra_texto, solicitante_id, db):
 
 
 def existe_email(email, db, ignorar_id=None):
+    """Já há solicitação com este e-mail (fora as recusadas)?"""
     email = (email or "").strip().lower()
     if not email:
         return False
@@ -50,15 +51,19 @@ def existe_cpf(cpf, db, ignorar_id=None):
     return consulta.first() is not None
 
 
-def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db):
+def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db, eh_admin=False):
+    """Atualiza os dados e volta para pendente.
+    Solicitante só edita o que é dele e só se estiver recusado.
+    Admin edita qualquer uma, em qualquer status."""
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
             return "nao_encontrado"
-        if colaborador.solicitante_id != solicitante_id:
-            return "nao_e_seu"
-        if colaborador.status != "recusado":
-            return "nao_recusado"
+        if not eh_admin:
+            if colaborador.solicitante_id != solicitante_id:
+                return "nao_e_seu"
+            if colaborador.status != "recusado":
+                return "nao_recusado"
 
         colaborador.nome = normalizar_nome(dados.nome)
         colaborador.email = normalizar_email(dados.email)
@@ -85,6 +90,7 @@ def listar_por_status(status, db):
 
 
 def listar_todos(db):
+    """Só para admin: tudo, de todo mundo, com o nome de quem solicitou."""
     resultados = (db.query(Colaborador, Usuario.nome, Usuario.email)
                   .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
                   .order_by(Colaborador.criado_em.desc())
@@ -130,6 +136,7 @@ def atualizar_status(colaborador_id, status, erro, db):
 
 
 def atualizar_decisao(colaborador_id, status, motivo, db):
+    """Usado quando o admin aprova ou recusa."""
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
@@ -142,3 +149,11 @@ def atualizar_decisao(colaborador_id, status, motivo, db):
     except Exception:
         db.rollback()
         raise
+
+
+def listar_por_dia(data_inicio, data_fim, db):
+    return (db.query(Colaborador)
+            .filter(Colaborador.criado_em >= data_inicio)
+            .filter(Colaborador.criado_em < data_fim)
+            .order_by(Colaborador.criado_em.desc())
+            .all())
