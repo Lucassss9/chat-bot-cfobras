@@ -3,14 +3,14 @@ from model.usuario_model import Usuario
 from service.texto_util import normalizar_nome, normalizar_email
 
 
-def salvar(dados, solicitante_id, db):
+def salvar(dados, obra_texto, solicitante_id, db):
     try:
         colaborador = Colaborador(
             nome=normalizar_nome(dados.nome),
             email=normalizar_email(dados.email),
             funcao=None if dados.ja_tem_acesso else dados.funcao,
             estado=dados.estado,
-            obra=dados.obra,
+            obra=obra_texto,
             observacao=(dados.observacao or None),
             terceirizado=False if dados.ja_tem_acesso else dados.terceirizado,
             cpf=None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf,
@@ -50,7 +50,7 @@ def existe_cpf(cpf, db, ignorar_id=None):
     return consulta.first() is not None
 
 
-def editar_e_reenviar(colaborador_id, dados, solicitante_id, db):
+def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db):
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
@@ -64,7 +64,7 @@ def editar_e_reenviar(colaborador_id, dados, solicitante_id, db):
         colaborador.email = normalizar_email(dados.email)
         colaborador.funcao = None if dados.ja_tem_acesso else dados.funcao
         colaborador.estado = dados.estado
-        colaborador.obra = dados.obra
+        colaborador.obra = obra_texto
         colaborador.observacao = dados.observacao or None
         colaborador.terceirizado = False if dados.ja_tem_acesso else dados.terceirizado
         colaborador.cpf = None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf
@@ -85,7 +85,6 @@ def listar_por_status(status, db):
 
 
 def listar_todos(db):
-    """Só para admin: tudo, de todo mundo, com o nome de quem solicitou."""
     resultados = (db.query(Colaborador, Usuario.nome, Usuario.email)
                   .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
                   .order_by(Colaborador.criado_em.desc())

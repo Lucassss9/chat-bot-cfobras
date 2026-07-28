@@ -43,9 +43,9 @@ PERFIS = [
 class ColaboradorCadastro(BaseModel):
     nome: str
     email: EmailStr
-    funcao: Optional[str] = None  
+    funcao: Optional[str] = None     # obrigatória só quando NÃO tem acesso ainda
     estado: str
-    obras: List[str]
+    obras: List[str]                 # uma ou mais CCISAs
     observacao: Optional[str] = None
     terceirizado: bool = False
     cpf: Optional[str] = None
@@ -104,8 +104,8 @@ def cadastrar(dados: ColaboradorCadastro,
             raise HTTPException(status_code=400,
                                 detail="CPF é obrigatório para colaborador Cury")
 
-    dados.obra = " ; ".join(dados.obras)
-    colaborador = salvar(dados, int(usuario_id), db)
+    obra_texto = " ; ".join(dados.obras)
+    colaborador = salvar(dados, obra_texto, int(usuario_id), db)
 
     if dados.ja_tem_acesso:
         from repository.colaborador_repository import atualizar_status
@@ -144,7 +144,6 @@ def editar(colaborador_id: int,
            db: Session = Depends(get_db),
            usuario_id: str = Depends(usuario_atual),
            papel: str = Depends(exigir_papel("solicitante", "admin"))):
-    """Reenvia um cadastro recusado com os dados corrigidos."""
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
     if not dados.obras:
@@ -156,8 +155,8 @@ def editar(colaborador_id: int,
         if not dados.terceirizado and not dados.cpf:
             raise HTTPException(status_code=400, detail="CPF é obrigatório para colaborador Cury")
 
-    dados.obra = " ; ".join(dados.obras)
-    resultado = editar_e_reenviar(colaborador_id, dados, int(usuario_id), db)
+    obra_texto = " ; ".join(dados.obras)
+    resultado = editar_e_reenviar(colaborador_id, dados, obra_texto, int(usuario_id), db)
 
     if resultado == "nao_encontrado":
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
@@ -174,6 +173,7 @@ def aprovar(colaborador_id: int,
             dados: Aprovacao,
             db: Session = Depends(get_db),
             papel: str = Depends(exigir_papel("admin"))):
+    """Libera para o robô, com o perfil que o admin escolheu."""
     if dados.perfil not in PERFIS:
         raise HTTPException(status_code=400,
                             detail=f"Perfil inválido. Escolha um de: {', '.join(PERFIS)}")
