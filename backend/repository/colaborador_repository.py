@@ -8,12 +8,13 @@ def salvar(dados, solicitante_id, db):
         colaborador = Colaborador(
             nome=normalizar_nome(dados.nome),
             email=normalizar_email(dados.email),
-            funcao=dados.funcao,
+            funcao=None if dados.ja_tem_acesso else dados.funcao,
             estado=dados.estado,
             obra=dados.obra,
             observacao=(dados.observacao or None),
-            terceirizado=dados.terceirizado,
-            cpf=None if dados.terceirizado else dados.cpf,
+            terceirizado=False if dados.ja_tem_acesso else dados.terceirizado,
+            cpf=None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf,
+            ja_tem_acesso=dados.ja_tem_acesso,
             solicitante_id=solicitante_id,
         )
         db.add(colaborador)
@@ -61,12 +62,13 @@ def editar_e_reenviar(colaborador_id, dados, solicitante_id, db):
 
         colaborador.nome = normalizar_nome(dados.nome)
         colaborador.email = normalizar_email(dados.email)
-        colaborador.funcao = dados.funcao
+        colaborador.funcao = None if dados.ja_tem_acesso else dados.funcao
         colaborador.estado = dados.estado
         colaborador.obra = dados.obra
         colaborador.observacao = dados.observacao or None
-        colaborador.terceirizado = dados.terceirizado
-        colaborador.cpf = None if dados.terceirizado else dados.cpf
+        colaborador.terceirizado = False if dados.ja_tem_acesso else dados.terceirizado
+        colaborador.cpf = None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf
+        colaborador.ja_tem_acesso = dados.ja_tem_acesso
         colaborador.status = "pendente"
         colaborador.motivo = None
         colaborador.erro = None
@@ -83,6 +85,7 @@ def listar_por_status(status, db):
 
 
 def listar_todos(db):
+    """Só para admin: tudo, de todo mundo, com o nome de quem solicitou."""
     resultados = (db.query(Colaborador, Usuario.nome, Usuario.email)
                   .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
                   .order_by(Colaborador.criado_em.desc())

@@ -33,12 +33,13 @@ STATUS_DO_ROBO = ["processando", "cadastrado", "vinculado", "erro"]
 class ColaboradorCadastro(BaseModel):
     nome: str
     email: EmailStr
-    funcao: str
+    funcao: Optional[str] = None     # obrigatória só quando NÃO tem acesso ainda
     estado: str
     obras: List[str]                 # uma ou mais CCISAs
     observacao: Optional[str] = None
     terceirizado: bool = False
     cpf: Optional[str] = None
+    ja_tem_acesso: bool = False
 
 class StatusUpdate(BaseModel):
     status: str
@@ -57,6 +58,7 @@ def _para_dict(colaborador):
         "obra": colaborador.obra,
         "obras": colaborador.obra.split(" ; ") if colaborador.obra else [],
         "observacao": colaborador.observacao,
+        "ja_tem_acesso": colaborador.ja_tem_acesso,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
         "status": colaborador.status,
@@ -77,15 +79,23 @@ def cadastrar(dados: ColaboradorCadastro,
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
 
-    if not dados.terceirizado and not dados.cpf:
-        raise HTTPException(status_code=400,
-                            detail="CPF é obrigatório para colaborador Cury")
-
     if not dados.obras:
         raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
 
+    if not dados.ja_tem_acesso:
+        if not dados.funcao:
+            raise HTTPException(status_code=400, detail="Informe a função.")
+        if not dados.terceirizado and not dados.cpf:
+            raise HTTPException(status_code=400,
+                                detail="CPF é obrigatório para colaborador Cury")
+
     dados.obra = " ; ".join(dados.obras)
     colaborador = salvar(dados, int(usuario_id), db)
+
+    # quem já tem acesso não passa pelo robô: entra direto como "cadastrado" (falta vincular)
+    if dados.ja_tem_acesso:
+        from repository.colaborador_repository import atualizar_status
+        atualizar_status(colaborador.id, "cadastrado", None, db)
     return {"mensagem": "Solicitação enviada para aprovação.", "id": colaborador.id}
 
 
@@ -124,11 +134,14 @@ def editar(colaborador_id: int,
     """Reenvia um cadastro recusado com os dados corrigidos."""
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
-    if not dados.terceirizado and not dados.cpf:
-        raise HTTPException(status_code=400, detail="CPF é obrigatório para colaborador Cury")
-
     if not dados.obras:
         raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
+
+    if not dados.ja_tem_acesso:
+        if not dados.funcao:
+            raise HTTPException(status_code=400, detail="Informe a função.")
+        if not dados.terceirizado and not dados.cpf:
+            raise HTTPException(status_code=400, detail="CPF é obrigatório para colaborador Cury")
 
     dados.obra = " ; ".join(dados.obras)
     resultado = editar_e_reenviar(colaborador_id, dados, int(usuario_id), db)
