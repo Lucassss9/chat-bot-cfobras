@@ -30,12 +30,22 @@ router = APIRouter()
 ESTADOS = ["SP", "RJ"]
 STATUS_DO_ROBO = ["processando", "cadastrado", "vinculado", "erro"]
 
+PERFIS = [
+    "Equipe de Apoio - CIVIL",
+    "Equipe de Apoio - INSTALL",
+    "Equipe de Apoio - Engenheiro",
+    "Almoxarifado",
+    "Operacional",
+    "Gerencial",
+    "Portaria",
+]
+
 class ColaboradorCadastro(BaseModel):
     nome: str
     email: EmailStr
-    funcao: Optional[str] = None     # obrigatória só quando NÃO tem acesso ainda
+    funcao: Optional[str] = None  
     estado: str
-    obras: List[str]                 # uma ou mais CCISAs
+    obras: List[str]
     observacao: Optional[str] = None
     terceirizado: bool = False
     cpf: Optional[str] = None
@@ -48,6 +58,10 @@ class StatusUpdate(BaseModel):
 class Recusa(BaseModel):
     motivo: str
 
+
+class Aprovacao(BaseModel):
+    perfil: str
+
 def _para_dict(colaborador):
     return {
         "id": colaborador.id,
@@ -59,6 +73,7 @@ def _para_dict(colaborador):
         "obras": colaborador.obra.split(" ; ") if colaborador.obra else [],
         "observacao": colaborador.observacao,
         "ja_tem_acesso": colaborador.ja_tem_acesso,
+        "perfil": colaborador.perfil,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
         "status": colaborador.status,
@@ -92,7 +107,6 @@ def cadastrar(dados: ColaboradorCadastro,
     dados.obra = " ; ".join(dados.obras)
     colaborador = salvar(dados, int(usuario_id), db)
 
-    # quem já tem acesso não passa pelo robô: entra direto como "cadastrado" (falta vincular)
     if dados.ja_tem_acesso:
         from repository.colaborador_repository import atualizar_status
         atualizar_status(colaborador.id, "cadastrado", None, db)
@@ -103,7 +117,6 @@ def cadastrar(dados: ColaboradorCadastro,
 def checar(email: str = "", cpf: str = "",
            db: Session = Depends(get_db),
            papel: str = Depends(exigir_papel("solicitante", "admin"))):
-    """O formulário chama isto para avisar o solicitante antes de enviar."""
     return {
         "email_repetido": existe_email(email, db),
         "cpf_repetido": existe_cpf(cpf, db),
@@ -158,9 +171,13 @@ def editar(colaborador_id: int,
 
 @router.patch("/colaborador/{colaborador_id}/aprovar")
 def aprovar(colaborador_id: int,
+            dados: Aprovacao,
             db: Session = Depends(get_db),
             papel: str = Depends(exigir_papel("admin"))):
-    """Libera a solicitação para o robô processar."""
+    if dados.perfil not in PERFIS:
+        raise HTTPException(status_code=400,
+                            detail=f"Perfil inválido. Escolha um de: {', '.join(PERFIS)}")
+
     colaborador = buscar_por_id(colaborador_id, db)
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
@@ -169,6 +186,8 @@ def aprovar(colaborador_id: int,
         raise HTTPException(status_code=400,
                             detail=f"Só dá para aprovar quem está pendente (está '{colaborador.status}').")
 
+    colaborador.perfil = dados.perfil
+    db.commit()
     return _para_dict(atualizar_decisao(colaborador_id, "aprovado", None, db))
 
 @router.patch("/colaborador/{colaborador_id}/recusar")
@@ -198,7 +217,6 @@ def recusar(colaborador_id: int,
 @router.get("/colaborador/pendentes")
 def pendentes(db: Session = Depends(get_db),
               papel: str = Depends(exigir_papel("admin"))):
-    """O robô Java consome esta rota: só o que já foi aprovado."""
     return [_para_dict(c) for c in listar_por_status("aprovado", db)]
 
 
