@@ -33,7 +33,8 @@ def existe_email(email, db, ignorar_id=None):
         return False
     consulta = (db.query(Colaborador)
                 .filter(Colaborador.email == email)
-                .filter(Colaborador.status != "recusado"))
+                .filter(Colaborador.status != "recusado")
+                .filter(Colaborador.apagada == False))
     if ignorar_id is not None:
         consulta = consulta.filter(Colaborador.id != ignorar_id)
     return consulta.first() is not None
@@ -45,7 +46,8 @@ def existe_cpf(cpf, db, ignorar_id=None):
         return False
     consulta = (db.query(Colaborador)
                 .filter(Colaborador.cpf == cpf)
-                .filter(Colaborador.status != "recusado"))
+                .filter(Colaborador.status != "recusado")
+                .filter(Colaborador.apagada == False))
     if ignorar_id is not None:
         consulta = consulta.filter(Colaborador.id != ignorar_id)
     return consulta.first() is not None
@@ -156,6 +158,7 @@ def listar_por_dia(data_inicio, data_fim, db):
     return (db.query(Colaborador)
             .filter(Colaborador.criado_em >= data_inicio)
             .filter(Colaborador.criado_em < data_fim)
+            .filter(Colaborador.apagada == False)
             .order_by(Colaborador.criado_em.desc())
             .all())
 
@@ -170,12 +173,13 @@ def apagar_para_lixeira(colaborador_id, motivo, db):
     return c
 
 
-def listar_lixeira(db):
-    resultados = (db.query(Colaborador, Usuario.nome)
-                  .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
-                  .filter(Colaborador.apagada == True)
-                  .order_by(Colaborador.criado_em.desc())
-                  .all())
+def listar_lixeira(db, solicitante_id=None):
+    consulta = (db.query(Colaborador, Usuario.nome)
+                .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
+                .filter(Colaborador.apagada == True))
+    if solicitante_id is not None:
+        consulta = consulta.filter(Colaborador.solicitante_id == solicitante_id)
+    resultados = consulta.order_by(Colaborador.criado_em.desc()).all()
     lista = []
     for colaborador, nome_do_solicitante in resultados:
         colaborador.solicitante_nome = nome_do_solicitante

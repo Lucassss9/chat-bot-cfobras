@@ -336,19 +336,32 @@ def reenviar(colaborador_id: int,
 def apagar(colaborador_id: int,
            dados: Exclusao,
            db: Session = Depends(get_db),
-           papel: str = Depends(exigir_papel("admin"))):
+           usuario_id: str = Depends(usuario_atual),
+           papel: str = Depends(exigir_papel("solicitante", "admin"))):
     if not dados.motivo or not dados.motivo.strip():
         raise HTTPException(status_code=400, detail="Informe o motivo da exclusao.")
-    c = apagar_para_lixeira(colaborador_id, dados.motivo.strip(), db)
-    if c is None:
+
+    alvo = buscar_por_id(colaborador_id, db)
+    if alvo is None:
         raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+
+    if papel != "admin":
+        if alvo.solicitante_id != int(usuario_id):
+            raise HTTPException(status_code=403, detail="Você só pode apagar as suas solicitações.")
+        if alvo.status not in ("pendente", "recusado"):
+            raise HTTPException(status_code=400,
+                                detail="Só dá para apagar antes da aprovação. Peça ao admin.")
+
+    c = apagar_para_lixeira(colaborador_id, dados.motivo.strip(), db)
     return _para_dict(c)
 
 
 @router.get("/colaborador/lixeira")
 def lixeira(db: Session = Depends(get_db),
-            papel: str = Depends(exigir_papel("admin"))):
-    itens = listar_lixeira(db)
+            usuario_id: str = Depends(usuario_atual),
+            papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    filtro_solicitante = None if papel == "admin" else int(usuario_id)
+    itens = listar_lixeira(db, filtro_solicitante)
     saida = []
     for c in itens:
         d = _para_dict(c)
