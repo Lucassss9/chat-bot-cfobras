@@ -9,6 +9,7 @@ from config.auth import usuario_atual, papel_atual, exigir_papel
 from config.connection import get_db
 from repository.obra_repository import (
     salvar, buscar_por_id, listar_todas, listar_do_solicitante, atualizar_decisao,
+    editar_e_reenviar,
 )
 from repository.colaborador_repository import buscar_email_do_solicitante
 from service.email_service import avisar_recusa
@@ -143,6 +144,24 @@ def baixar_ficha(solicitacao_id: int,
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{nome}"'},
     )
+
+
+@router.patch("/obra/{solicitacao_id}/editar")
+def editar_obra(solicitacao_id: int,
+                dados: ObraEntrada,
+                db: Session = Depends(get_db),
+                usuario_id: str = Depends(usuario_atual),
+                papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    """Reenvia uma solicitacao de obra corrigida."""
+    resultado = editar_e_reenviar(solicitacao_id, dados, int(usuario_id), db,
+                                  eh_admin=(papel == "admin"))
+    if resultado == "nao_encontrado":
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    if resultado == "nao_e_seu":
+        raise HTTPException(status_code=403, detail="Você só pode editar as suas solicitações.")
+    if resultado == "nao_recusado":
+        raise HTTPException(status_code=400, detail="Só dá para editar uma solicitação recusada.")
+    return _para_dict(resultado)
 
 
 @router.patch("/obra/{solicitacao_id}/aprovar")

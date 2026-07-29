@@ -91,3 +91,58 @@ def atualizar_decisao(solicitacao_id, status, motivo, db):
     except Exception:
         db.rollback()
         raise
+
+
+def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False):
+    try:
+        s = buscar_por_id(solicitacao_id, db)
+        if s is None:
+            return "nao_encontrado"
+        if not eh_admin:
+            if s.solicitante_id != solicitante_id:
+                return "nao_e_seu"
+            if s.status != "recusado":
+                return "nao_recusado"
+
+        s.estado = dados.estado
+        s.tipo_filial = dados.tipo_filial
+        s.filial_nome = dados.filial_nome
+        s.filial_cnpj = dados.filial_cnpj
+        s.filial_endereco = dados.filial_endereco
+        s.filial_cidade = dados.filial_cidade
+        s.filial_estado = dados.filial_estado
+        s.obra_nome = dados.obra_nome
+        s.obra_codigo = dados.obra_codigo
+        s.obra_email = dados.obra_email
+        s.obra_endereco = dados.obra_endereco
+        s.obra_cidade = dados.obra_cidade
+        s.obra_estado = dados.obra_estado
+        s.obra_engenheiro = dados.obra_engenheiro
+        s.obra_descricao = dados.obra_descricao
+
+        if dados.ficha_base64:
+            arquivo = base64.b64decode(dados.ficha_base64)
+            if len(arquivo) > LIMITE_PDF:
+                raise ValueError("A ficha cadastral passa de 5 MB.")
+            s.ficha_nome = dados.ficha_nome
+            s.ficha_arquivo = arquivo
+
+        s.pessoas.clear()
+        for pessoa in dados.pessoas:
+            s.pessoas.append(PessoaDaObra(
+                nome=normalizar_nome(pessoa.nome),
+                email=normalizar_email(pessoa.email),
+                funcao=None if pessoa.ja_tem_acesso else pessoa.funcao,
+                cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
+                terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
+                ja_tem_acesso=pessoa.ja_tem_acesso,
+            ))
+
+        s.status = "pendente"
+        s.motivo = None
+        db.commit()
+        db.refresh(s)
+        return s
+    except Exception:
+        db.rollback()
+        raise

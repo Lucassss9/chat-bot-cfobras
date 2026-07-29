@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from config.auth import usuario_atual, papel_atual, exigir_papel
 from config.connection import get_db
+from repository.config_repository import obter_senha_padrao
 from repository.colaborador_repository import (
     salvar,
     listar_por_status,
@@ -223,7 +224,13 @@ def recusar(colaborador_id: int,
 def pendentes(db: Session = Depends(get_db),
               papel: str = Depends(exigir_papel("admin"))):
     """O robô Java consome esta rota: só o que já foi aprovado."""
-    return [_para_dict(c) for c in listar_por_status("aprovado", db)]
+    senha = obter_senha_padrao(db)
+    fila = []
+    for c in listar_por_status("aprovado", db):
+        d = _para_dict(c)
+        d["senha_padrao"] = senha
+        fila.append(d)
+    return fila
 
 
 @router.patch("/colaborador/{colaborador_id}/status")
