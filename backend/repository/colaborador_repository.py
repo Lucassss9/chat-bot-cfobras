@@ -84,12 +84,16 @@ def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db, eh_
 
 
 def listar_por_status(status, db):
-    return db.query(Colaborador).filter(Colaborador.status == status).all()
+    return (db.query(Colaborador)
+            .filter(Colaborador.status == status)
+            .filter(Colaborador.apagada == False)
+            .all())
 
 
 def listar_todos(db):
     resultados = (db.query(Colaborador, Usuario.nome, Usuario.email)
                   .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
+                  .filter(Colaborador.apagada == False)
                   .order_by(Colaborador.criado_em.desc())
                   .all())
 
@@ -104,6 +108,7 @@ def listar_todos(db):
 def listar_do_solicitante(solicitante_id, db):
     return (db.query(Colaborador)
             .filter(Colaborador.solicitante_id == solicitante_id)
+            .filter(Colaborador.apagada == False)
             .order_by(Colaborador.criado_em.desc())
             .all())
 
@@ -153,3 +158,45 @@ def listar_por_dia(data_inicio, data_fim, db):
             .filter(Colaborador.criado_em < data_fim)
             .order_by(Colaborador.criado_em.desc())
             .all())
+
+
+def apagar_para_lixeira(colaborador_id, motivo, db):
+    c = buscar_por_id(colaborador_id, db)
+    if c is None:
+        return None
+    c.apagada = True
+    c.motivo_exclusao = motivo
+    db.commit()
+    return c
+
+
+def listar_lixeira(db):
+    resultados = (db.query(Colaborador, Usuario.nome)
+                  .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
+                  .filter(Colaborador.apagada == True)
+                  .order_by(Colaborador.criado_em.desc())
+                  .all())
+    lista = []
+    for colaborador, nome_do_solicitante in resultados:
+        colaborador.solicitante_nome = nome_do_solicitante
+        lista.append(colaborador)
+    return lista
+
+
+def restaurar_da_lixeira(colaborador_id, db):
+    c = buscar_por_id(colaborador_id, db)
+    if c is None:
+        return None
+    c.apagada = False
+    c.motivo_exclusao = None
+    db.commit()
+    return c
+
+
+def apagar_definitivo(colaborador_id, db):
+    c = buscar_por_id(colaborador_id, db)
+    if c is None:
+        return None
+    db.delete(c)
+    db.commit()
+    return True

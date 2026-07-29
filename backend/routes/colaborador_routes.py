@@ -11,6 +11,10 @@ from repository.colaborador_repository import (
     salvar,
     listar_por_status,
     listar_por_dia,
+    apagar_para_lixeira,
+    listar_lixeira,
+    restaurar_da_lixeira,
+    apagar_definitivo,
     listar_do_solicitante,
     listar_todos,
     buscar_por_id,
@@ -60,6 +64,10 @@ class StatusUpdate(BaseModel):
     erro: Optional[str] = None
 
 class Recusa(BaseModel):
+    motivo: str
+
+
+class Exclusao(BaseModel):
     motivo: str
 
 
@@ -314,3 +322,49 @@ def reenviar(colaborador_id: int,
     colaborador.erro = None
     db.commit()
     return _para_dict(colaborador)
+
+
+@router.patch("/colaborador/{colaborador_id}/apagar")
+def apagar(colaborador_id: int,
+           dados: Exclusao,
+           db: Session = Depends(get_db),
+           papel: str = Depends(exigir_papel("admin"))):
+    if not dados.motivo or not dados.motivo.strip():
+        raise HTTPException(status_code=400, detail="Informe o motivo da exclusao.")
+    c = apagar_para_lixeira(colaborador_id, dados.motivo.strip(), db)
+    if c is None:
+        raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+    return _para_dict(c)
+
+
+@router.get("/colaborador/lixeira")
+def lixeira(db: Session = Depends(get_db),
+            papel: str = Depends(exigir_papel("admin"))):
+    itens = listar_lixeira(db)
+    saida = []
+    for c in itens:
+        d = _para_dict(c)
+        d["solicitante"] = getattr(c, "solicitante_nome", None)
+        d["motivo_exclusao"] = c.motivo_exclusao
+        saida.append(d)
+    return saida
+
+
+@router.patch("/colaborador/{colaborador_id}/restaurar")
+def restaurar(colaborador_id: int,
+              db: Session = Depends(get_db),
+              papel: str = Depends(exigir_papel("admin"))):
+    c = restaurar_da_lixeira(colaborador_id, db)
+    if c is None:
+        raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+    return _para_dict(c)
+
+
+@router.delete("/colaborador/{colaborador_id}/definitivo")
+def definitivo(colaborador_id: int,
+               db: Session = Depends(get_db),
+               papel: str = Depends(exigir_papel("admin"))):
+    ok = apagar_definitivo(colaborador_id, db)
+    if ok is None:
+        raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+    return {"mensagem": "Apagado definitivamente."}
