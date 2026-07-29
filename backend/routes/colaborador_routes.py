@@ -46,13 +46,14 @@ PERFIS = [
 class ColaboradorCadastro(BaseModel):
     nome: str
     email: EmailStr
-    funcao: Optional[str] = None     # obrigatória só quando NÃO tem acesso ainda
+    funcao: Optional[str] = None
     estado: str
-    obras: List[str]                 # uma ou mais CCISAs
+    obras: List[str]
     observacao: Optional[str] = None
     terceirizado: bool = False
     cpf: Optional[str] = None
     ja_tem_acesso: bool = False
+    setor: Optional[str] = None
 
 class StatusUpdate(BaseModel):
     status: str
@@ -77,6 +78,7 @@ def _para_dict(colaborador):
         "observacao": colaborador.observacao,
         "ja_tem_acesso": colaborador.ja_tem_acesso,
         "perfil": colaborador.perfil,
+        "setor": colaborador.setor,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
         "status": colaborador.status,
@@ -110,7 +112,6 @@ def cadastrar(dados: ColaboradorCadastro,
     obra_texto = " ; ".join(dados.obras)
     colaborador = salvar(dados, obra_texto, int(usuario_id), db)
 
-    # quem já tem acesso não passa pelo robô: entra direto como "cadastrado" (falta vincular)
     if dados.ja_tem_acesso:
         from repository.colaborador_repository import atualizar_status
         atualizar_status(colaborador.id, "cadastrado", None, db)
@@ -121,7 +122,6 @@ def cadastrar(dados: ColaboradorCadastro,
 def checar(email: str = "", cpf: str = "",
            db: Session = Depends(get_db),
            papel: str = Depends(exigir_papel("solicitante", "admin"))):
-    """O formulário chama isto para avisar o solicitante antes de enviar."""
     return {
         "email_repetido": existe_email(email, db),
         "cpf_repetido": existe_cpf(cpf, db),
@@ -132,7 +132,6 @@ def checar(email: str = "", cpf: str = "",
 def meus(db: Session = Depends(get_db),
          usuario_id: str = Depends(usuario_atual),
          papel: str = Depends(papel_atual)):
-    """Admin vê tudo de todo mundo; solicitante vê só o que ele pediu."""
     if papel == "admin":
         todos = listar_todos(db)
         for c in todos:
@@ -149,7 +148,6 @@ def editar(colaborador_id: int,
            db: Session = Depends(get_db),
            usuario_id: str = Depends(usuario_atual),
            papel: str = Depends(exigir_papel("solicitante", "admin"))):
-    """Reenvia um cadastro recusado com os dados corrigidos."""
     if dados.estado not in ESTADOS:
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
     if not dados.obras:
@@ -179,7 +177,6 @@ def aprovar(colaborador_id: int,
             dados: Aprovacao,
             db: Session = Depends(get_db),
             papel: str = Depends(exigir_papel("admin"))):
-    """Libera para o robô, com o perfil que o admin escolheu."""
     if dados.perfil not in PERFIS:
         raise HTTPException(status_code=400,
                             detail=f"Perfil inválido. Escolha um de: {', '.join(PERFIS)}")
@@ -223,7 +220,6 @@ def recusar(colaborador_id: int,
 @router.get("/colaborador/pendentes")
 def pendentes(db: Session = Depends(get_db),
               papel: str = Depends(exigir_papel("admin"))):
-    """O robô Java consome esta rota: só o que já foi aprovado."""
     senha = obter_senha_padrao(db)
     fila = []
     for c in listar_por_status("aprovado", db):
@@ -261,7 +257,6 @@ def mudar_status(colaborador_id: int,
 def relatorio(data: str = "",
               db: Session = Depends(get_db),
               papel: str = Depends(exigir_papel("admin"))):
-    """Baixa um CSV com os cadastros do dia informado (YYYY-MM-DD). Vazio = hoje."""
     from datetime import datetime, timedelta
 
     try:
@@ -305,7 +300,6 @@ def relatorio(data: str = "",
 def reenviar(colaborador_id: int,
              db: Session = Depends(get_db),
              papel: str = Depends(exigir_papel("admin"))):
-    """Coloca de volta na fila do robô (erro -> aprovado), sem mexer nos dados."""
     colaborador = buscar_por_id(colaborador_id, db)
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")

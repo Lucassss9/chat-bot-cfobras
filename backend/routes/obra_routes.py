@@ -25,6 +25,8 @@ class PessoaEntrada(BaseModel):
     cpf: Optional[str] = None
     terceirizado: bool = False
     ja_tem_acesso: bool = False
+    setor: Optional[str] = None
+    observacao: Optional[str] = None
 
 
 class ObraExtraEntrada(BaseModel):
@@ -103,6 +105,8 @@ def _para_dict(s):
             "cpf": p.cpf,
             "terceirizado": p.terceirizado,
             "ja_tem_acesso": p.ja_tem_acesso,
+            "setor": p.setor,
+            "observacao": p.observacao,
         } for p in s.pessoas],
         "obras_extras": [{
             "obra_nome": e.obra_nome,
@@ -183,7 +187,6 @@ def editar_obra(solicitacao_id: int,
                 db: Session = Depends(get_db),
                 usuario_id: str = Depends(usuario_atual),
                 papel: str = Depends(exigir_papel("solicitante", "admin"))):
-    """Reenvia uma solicitacao de obra corrigida."""
     resultado = editar_e_reenviar(solicitacao_id, dados, int(usuario_id), db,
                                   eh_admin=(papel == "admin"))
     if resultado == "nao_encontrado":
@@ -212,7 +215,6 @@ def aprovar(solicitacao_id: int,
 def concluir(solicitacao_id: int,
              db: Session = Depends(get_db),
              papel: str = Depends(exigir_papel("admin"))):
-    """Você marca aqui depois de cadastrar a obra no CF Obras."""
     solicitacao = buscar_por_id(solicitacao_id, db)
     if solicitacao is None:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")

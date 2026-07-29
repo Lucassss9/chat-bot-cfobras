@@ -10,13 +10,14 @@ class Colaborador(Base):
 
     nome = Column(String, nullable=False)
     email = Column(String, nullable=False)
-    funcao = Column(String, nullable=True)   
+    funcao = Column(String, nullable=True)
     estado = Column(String, nullable=False)
     obra = Column(String, nullable=False)
     observacao = Column(Text, nullable=True)
     terceirizado = Column(Boolean, default=False)
     ja_tem_acesso = Column(Boolean, default=False)
     perfil = Column(String, nullable=True)
+    setor = Column(String, nullable=True)
     cpf = Column(String, nullable=True)
 
     status = Column(String, default="pendente")

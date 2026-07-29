@@ -15,6 +15,7 @@ def salvar(dados, obra_texto, solicitante_id, db):
             terceirizado=False if dados.ja_tem_acesso else dados.terceirizado,
             cpf=None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf,
             ja_tem_acesso=dados.ja_tem_acesso,
+            setor=getattr(dados, "setor", None),
             solicitante_id=solicitante_id,
         )
         db.add(colaborador)
@@ -27,7 +28,6 @@ def salvar(dados, obra_texto, solicitante_id, db):
 
 
 def existe_email(email, db, ignorar_id=None):
-    """Já há solicitação com este e-mail (fora as recusadas)?"""
     email = (email or "").strip().lower()
     if not email:
         return False
@@ -52,9 +52,6 @@ def existe_cpf(cpf, db, ignorar_id=None):
 
 
 def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db, eh_admin=False):
-    """Atualiza os dados e volta para pendente.
-    Solicitante só edita o que é dele e só se estiver recusado.
-    Admin edita qualquer uma, em qualquer status."""
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
@@ -74,6 +71,7 @@ def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db, eh_
         colaborador.terceirizado = False if dados.ja_tem_acesso else dados.terceirizado
         colaborador.cpf = None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf
         colaborador.ja_tem_acesso = dados.ja_tem_acesso
+        colaborador.setor = getattr(dados, "setor", None)
         colaborador.status = "pendente"
         colaborador.motivo = None
         colaborador.erro = None
@@ -90,7 +88,6 @@ def listar_por_status(status, db):
 
 
 def listar_todos(db):
-    """Só para admin: tudo, de todo mundo, com o nome de quem solicitou."""
     resultados = (db.query(Colaborador, Usuario.nome, Usuario.email)
                   .outerjoin(Usuario, Colaborador.solicitante_id == Usuario.id)
                   .order_by(Colaborador.criado_em.desc())

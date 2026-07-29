@@ -33,7 +33,6 @@ class SolicitacaoObra(Base):
     ficha_nome = Column(String, nullable=True)
     ficha_arquivo = Column(LargeBinary, nullable=True)
 
-    # controle
     status = Column(String, default="pendente")
     motivo = Column(Text, nullable=True)
     solicitante_id = Column(Integer, ForeignKey("usuario.id"))
@@ -60,6 +59,8 @@ class PessoaDaObra(Base):
     terceirizado = Column(Boolean, default=False)
 
     ja_tem_acesso = Column(Boolean, default=False)
+    setor = Column(String, nullable=True)
+    observacao = Column(Text, nullable=True)
 
     solicitacao = relationship("SolicitacaoObra", back_populates="pessoas")
 

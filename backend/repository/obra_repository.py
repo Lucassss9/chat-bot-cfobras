@@ -4,7 +4,7 @@ from model.obra_model import SolicitacaoObra, PessoaDaObra, ObraExtra
 from model.usuario_model import Usuario
 from service.texto_util import normalizar_nome, normalizar_email
 
-LIMITE_PDF = 5 * 1024 * 1024   # 5 MB
+LIMITE_PDF = 5 * 1024 * 1024
 
 def salvar(dados, solicitante_id, db):
     try:
@@ -46,6 +46,8 @@ def salvar(dados, solicitante_id, db):
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
+                setor=getattr(pessoa, "setor", None),
+                observacao=getattr(pessoa, "observacao", None),
             ))
 
         for extra in getattr(dados, "obras_extras", []) or []:
@@ -110,8 +112,6 @@ def atualizar_decisao(solicitacao_id, status, motivo, db):
 
 
 def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False):
-    """Atualiza os dados da solicitacao de obra e volta para pendente.
-    Solicitante so edita a sua e so se recusada; admin edita qualquer uma."""
     try:
         s = buscar_por_id(solicitacao_id, db)
         if s is None:
@@ -157,6 +157,8 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
+                setor=getattr(pessoa, "setor", None),
+                observacao=getattr(pessoa, "observacao", None),
             ))
 
         s.obras_extras.clear()
@@ -183,10 +185,9 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
 
 
 def criar_colaboradores_da_obra(solicitacao, db):
-    """Cada pessoa da obra vira uma solicitacao de colaborador (pendente)."""
     obra_texto = solicitacao.obra_nome or solicitacao.filial_nome or ""
-    obs = f"Da solicitacao de obra: {solicitacao.filial_nome}"
     for p in solicitacao.pessoas:
+        obs = p.observacao or f"Da solicitacao de obra: {solicitacao.filial_nome}"
         col = Colaborador(
             nome=p.nome,
             email=p.email,
@@ -197,6 +198,7 @@ def criar_colaboradores_da_obra(solicitacao, db):
             terceirizado=False if p.ja_tem_acesso else p.terceirizado,
             ja_tem_acesso=p.ja_tem_acesso,
             cpf=None if p.ja_tem_acesso else p.cpf,
+            setor=p.setor,
             status="cadastrado" if p.ja_tem_acesso else "pendente",
             solicitante_id=solicitacao.solicitante_id,
         )
