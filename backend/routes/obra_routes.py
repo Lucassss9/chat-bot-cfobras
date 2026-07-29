@@ -10,6 +10,7 @@ from config.connection import get_db
 from repository.obra_repository import (
     salvar, buscar_por_id, listar_todas, listar_do_solicitante, atualizar_decisao,
     editar_e_reenviar,
+    criar_colaboradores_da_obra,
 )
 from repository.colaborador_repository import buscar_email_do_solicitante
 from service.email_service import avisar_recusa
@@ -54,6 +55,9 @@ class ObraEntrada(BaseModel):
     obra_estado: Optional[str] = None
     obra_engenheiro: Optional[str] = None
     obra_descricao: Optional[str] = None
+    obra_cep: Optional[str] = None
+    tel_adm: Optional[str] = None
+    tel_engenheiro: Optional[str] = None
 
     ficha_nome: Optional[str] = None
     ficha_base64: Optional[str] = None
@@ -84,6 +88,9 @@ def _para_dict(s):
         "obra_estado": s.obra_estado,
         "obra_engenheiro": s.obra_engenheiro,
         "obra_descricao": s.obra_descricao,
+        "obra_cep": s.obra_cep,
+        "tel_adm": s.tel_adm,
+        "tel_engenheiro": s.tel_engenheiro,
         "ficha_nome": s.ficha_nome,
         "tem_ficha": s.ficha_arquivo is not None,
         "status": s.status,
@@ -137,10 +144,12 @@ def solicitar(dados: ObraEntrada,
 
     try:
         solicitacao = salvar(dados, int(usuario_id), db)
+        criar_colaboradores_da_obra(solicitacao, db)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return {"mensagem": "Solicitação de obra enviada para aprovação.", "id": solicitacao.id}
+    return {"mensagem": "Solicitação de obra enviada. As pessoas foram para Solicitações de cadastro.",
+            "id": solicitacao.id}
 
 
 @router.get("/obra/minhas")

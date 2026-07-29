@@ -26,6 +26,9 @@ class SolicitacaoObra(Base):
     obra_estado = Column(String, nullable=True)
     obra_engenheiro = Column(String, nullable=True)
     obra_descricao = Column(Text, nullable=True)
+    obra_cep = Column(String, nullable=True)
+    tel_adm = Column(String, nullable=True)
+    tel_engenheiro = Column(String, nullable=True)
 
     ficha_nome = Column(String, nullable=True)
     ficha_arquivo = Column(LargeBinary, nullable=True)

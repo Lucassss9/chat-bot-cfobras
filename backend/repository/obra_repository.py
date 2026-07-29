@@ -1,4 +1,5 @@
 import base64
+from model.colaborador_model import Colaborador
 from model.obra_model import SolicitacaoObra, PessoaDaObra, ObraExtra
 from model.usuario_model import Usuario
 from service.texto_util import normalizar_nome, normalizar_email
@@ -29,6 +30,9 @@ def salvar(dados, solicitante_id, db):
             obra_estado=dados.obra_estado,
             obra_engenheiro=dados.obra_engenheiro,
             obra_descricao=dados.obra_descricao,
+            obra_cep=getattr(dados, "obra_cep", None),
+            tel_adm=getattr(dados, "tel_adm", None),
+            tel_engenheiro=getattr(dados, "tel_engenheiro", None),
             ficha_nome=dados.ficha_nome,
             ficha_arquivo=arquivo,
             solicitante_id=solicitante_id,
@@ -133,6 +137,9 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
         s.obra_estado = dados.obra_estado
         s.obra_engenheiro = dados.obra_engenheiro
         s.obra_descricao = dados.obra_descricao
+        s.obra_cep = getattr(dados, "obra_cep", None)
+        s.tel_adm = getattr(dados, "tel_adm", None)
+        s.tel_engenheiro = getattr(dados, "tel_engenheiro", None)
 
         if dados.ficha_base64:
             arquivo = base64.b64decode(dados.ficha_base64)
@@ -173,3 +180,25 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
     except Exception:
         db.rollback()
         raise
+
+
+def criar_colaboradores_da_obra(solicitacao, db):
+    """Cada pessoa da obra vira uma solicitacao de colaborador (pendente)."""
+    obra_texto = solicitacao.obra_nome or solicitacao.filial_nome or ""
+    obs = f"Da solicitacao de obra: {solicitacao.filial_nome}"
+    for p in solicitacao.pessoas:
+        col = Colaborador(
+            nome=p.nome,
+            email=p.email,
+            funcao=None if p.ja_tem_acesso else p.funcao,
+            estado=solicitacao.estado,
+            obra=obra_texto,
+            observacao=obs,
+            terceirizado=False if p.ja_tem_acesso else p.terceirizado,
+            ja_tem_acesso=p.ja_tem_acesso,
+            cpf=None if p.ja_tem_acesso else p.cpf,
+            status="cadastrado" if p.ja_tem_acesso else "pendente",
+            solicitante_id=solicitacao.solicitante_id,
+        )
+        db.add(col)
+    db.commit()
