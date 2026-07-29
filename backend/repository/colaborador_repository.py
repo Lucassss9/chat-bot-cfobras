@@ -136,7 +136,6 @@ def atualizar_status(colaborador_id, status, erro, db):
 
 
 def atualizar_decisao(colaborador_id, status, motivo, db):
-    """Usado quando o admin aprova ou recusa."""
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:

@@ -30,6 +30,7 @@ router = APIRouter()
 
 ESTADOS = ["SP", "RJ"]
 STATUS_DO_ROBO = ["processando", "cadastrado", "vinculado", "erro"]
+STATUS_VALIDOS = ["pendente", "aprovado", "processando", "cadastrado", "vinculado", "erro", "recusado"]
 
 PERFIS = [
     "Equipe de Apoio - CIVIL",
@@ -231,9 +232,9 @@ def mudar_status(colaborador_id: int,
                  tarefas: BackgroundTasks,
                  db: Session = Depends(get_db),
                  papel: str = Depends(exigir_papel("admin"))):
-    if dados.status not in STATUS_DO_ROBO:
+    if dados.status not in STATUS_VALIDOS:
         raise HTTPException(status_code=400,
-                            detail=f"Status deve ser um de: {', '.join(STATUS_DO_ROBO)}")
+                            detail=f"Status deve ser um de: {', '.join(STATUS_VALIDOS)}")
 
     colaborador = atualizar_status(colaborador_id, dados.status, dados.erro, db)
     if colaborador is None:
@@ -291,3 +292,24 @@ def relatorio(data: str = "",
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'},
     )
+
+
+@router.patch("/colaborador/{colaborador_id}/reenviar")
+def reenviar(colaborador_id: int,
+             db: Session = Depends(get_db),
+             papel: str = Depends(exigir_papel("admin"))):
+    """Coloca de volta na fila do robô (erro -> aprovado), sem mexer nos dados."""
+    colaborador = buscar_por_id(colaborador_id, db)
+    if colaborador is None:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    if colaborador.status != "erro":
+        raise HTTPException(status_code=400,
+                            detail=f"Só dá para reenviar quem está com erro (está '{colaborador.status}').")
+    if not colaborador.perfil:
+        raise HTTPException(status_code=400,
+                            detail="Sem perfil definido. Edite e escolha o perfil antes de reenviar.")
+
+    colaborador.status = "aprovado"
+    colaborador.erro = None
+    db.commit()
+    return _para_dict(colaborador)
