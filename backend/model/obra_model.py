@@ -38,6 +38,8 @@ class SolicitacaoObra(Base):
 
     pessoas = relationship("PessoaDaObra", back_populates="solicitacao",
                            cascade="all, delete-orphan")
+    obras_extras = relationship("ObraExtra", back_populates="solicitacao",
+                                cascade="all, delete-orphan")
 
 
 class PessoaDaObra(Base):
@@ -57,3 +59,21 @@ class PessoaDaObra(Base):
     ja_tem_acesso = Column(Boolean, default=False)
 
     solicitacao = relationship("SolicitacaoObra", back_populates="pessoas")
+
+
+class ObraExtra(Base):
+    __tablename__ = "obra_extra"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    solicitacao_id = Column(Integer, ForeignKey("solicitacao_obra.id"), nullable=False)
+
+    obra_nome = Column(String, nullable=False)
+    obra_codigo = Column(String, nullable=True)
+    obra_email = Column(String, nullable=True)
+    obra_endereco = Column(String, nullable=True)
+    obra_cidade = Column(String, nullable=True)
+    obra_estado = Column(String, nullable=True)
+    obra_engenheiro = Column(String, nullable=True)
+    obra_descricao = Column(Text, nullable=True)
+
+    solicitacao = relationship("SolicitacaoObra", back_populates="obras_extras")

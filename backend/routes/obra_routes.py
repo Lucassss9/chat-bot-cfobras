@@ -26,6 +26,17 @@ class PessoaEntrada(BaseModel):
     ja_tem_acesso: bool = False
 
 
+class ObraExtraEntrada(BaseModel):
+    obra_nome: str
+    obra_codigo: Optional[str] = None
+    obra_email: Optional[str] = None
+    obra_endereco: Optional[str] = None
+    obra_cidade: Optional[str] = None
+    obra_estado: Optional[str] = None
+    obra_engenheiro: Optional[str] = None
+    obra_descricao: Optional[str] = None
+
+
 class ObraEntrada(BaseModel):
     estado: str = "SP"
     tipo_filial: str = "existente"
@@ -48,6 +59,7 @@ class ObraEntrada(BaseModel):
     ficha_base64: Optional[str] = None
 
     pessoas: List[PessoaEntrada] = []
+    obras_extras: List[ObraExtraEntrada] = []
 
 
 class Recusa(BaseModel):
@@ -85,6 +97,16 @@ def _para_dict(s):
             "terceirizado": p.terceirizado,
             "ja_tem_acesso": p.ja_tem_acesso,
         } for p in s.pessoas],
+        "obras_extras": [{
+            "obra_nome": e.obra_nome,
+            "obra_codigo": e.obra_codigo,
+            "obra_email": e.obra_email,
+            "obra_endereco": e.obra_endereco,
+            "obra_cidade": e.obra_cidade,
+            "obra_estado": e.obra_estado,
+            "obra_engenheiro": e.obra_engenheiro,
+            "obra_descricao": e.obra_descricao,
+        } for e in getattr(s, "obras_extras", [])],
     }
 
 

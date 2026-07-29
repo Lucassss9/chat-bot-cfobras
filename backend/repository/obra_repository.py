@@ -1,5 +1,5 @@
 import base64
-from model.obra_model import SolicitacaoObra, PessoaDaObra
+from model.obra_model import SolicitacaoObra, PessoaDaObra, ObraExtra
 from model.usuario_model import Usuario
 from service.texto_util import normalizar_nome, normalizar_email
 
@@ -42,6 +42,18 @@ def salvar(dados, solicitante_id, db):
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
+            ))
+
+        for extra in getattr(dados, "obras_extras", []) or []:
+            solicitacao.obras_extras.append(ObraExtra(
+                obra_nome=extra.obra_nome,
+                obra_codigo=extra.obra_codigo,
+                obra_email=extra.obra_email,
+                obra_endereco=extra.obra_endereco,
+                obra_cidade=extra.obra_cidade,
+                obra_estado=extra.obra_estado,
+                obra_engenheiro=extra.obra_engenheiro,
+                obra_descricao=extra.obra_descricao,
             ))
 
         db.add(solicitacao)
@@ -94,6 +106,8 @@ def atualizar_decisao(solicitacao_id, status, motivo, db):
 
 
 def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False):
+    """Atualiza os dados da solicitacao de obra e volta para pendente.
+    Solicitante so edita a sua e so se recusada; admin edita qualquer uma."""
     try:
         s = buscar_por_id(solicitacao_id, db)
         if s is None:
@@ -136,6 +150,19 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
+            ))
+
+        s.obras_extras.clear()
+        for extra in getattr(dados, "obras_extras", []) or []:
+            s.obras_extras.append(ObraExtra(
+                obra_nome=extra.obra_nome,
+                obra_codigo=extra.obra_codigo,
+                obra_email=extra.obra_email,
+                obra_endereco=extra.obra_endereco,
+                obra_cidade=extra.obra_cidade,
+                obra_estado=extra.obra_estado,
+                obra_engenheiro=extra.obra_engenheiro,
+                obra_descricao=extra.obra_descricao,
             ))
 
         s.status = "pendente"
