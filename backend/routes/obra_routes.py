@@ -16,7 +16,7 @@ from repository.obra_repository import (
     restaurar_obra,
     apagar_obra_definitivo,
 )
-from repository.colaborador_repository import buscar_email_do_solicitante
+from repository.colaborador_repository import buscar_email_do_solicitante, existe_email, existe_cpf
 from service.email_service import avisar_recusa
 
 router = APIRouter()
@@ -145,6 +145,22 @@ def solicitar(dados: ObraEntrada,
     if dados.tipo_filial == "nova" and not dados.filial_cnpj:
         raise HTTPException(status_code=400, detail="Filial nova precisa do CNPJ.")
 
+    vistos_email = set()
+    vistos_cpf = set()
+    for pessoa in dados.pessoas:
+        if not pessoa.ja_tem_acesso:
+            em = (pessoa.email or "").strip().lower()
+            if em and em in vistos_email:
+                raise HTTPException(status_code=400,
+                                    detail=f"O e-mail {em} aparece mais de uma vez na lista.")
+            vistos_email.add(em)
+            cp = (pessoa.cpf or "").strip()
+            if cp and cp in vistos_cpf:
+                raise HTTPException(status_code=400,
+                                    detail=f"O CPF {cp} aparece mais de uma vez na lista.")
+            if cp:
+                vistos_cpf.add(cp)
+
     for pessoa in dados.pessoas:
         if not pessoa.ja_tem_acesso and not pessoa.funcao:
             raise HTTPException(
@@ -154,6 +170,15 @@ def solicitar(dados: ObraEntrada,
             raise HTTPException(
                 status_code=400,
                 detail=f"{pessoa.nome} precisa de CPF (ou marque como terceirizado).")
+        if not pessoa.ja_tem_acesso:
+            if existe_email(pessoa.email, db):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{pessoa.nome}: já existe uma solicitação com esse e-mail.")
+            if pessoa.cpf and existe_cpf(pessoa.cpf, db):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{pessoa.nome}: já existe uma solicitação com esse CPF.")
 
     try:
         solicitacao = salvar(dados, int(usuario_id), db)

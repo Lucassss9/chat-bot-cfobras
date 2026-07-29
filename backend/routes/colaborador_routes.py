@@ -117,6 +117,14 @@ def cadastrar(dados: ColaboradorCadastro,
             raise HTTPException(status_code=400,
                                 detail="CPF é obrigatório para colaborador Cury")
 
+    if not dados.ja_tem_acesso:
+        if existe_email(dados.email, db):
+            raise HTTPException(status_code=400,
+                                detail="Já existe uma solicitação com esse e-mail.")
+        if dados.cpf and existe_cpf(dados.cpf, db):
+            raise HTTPException(status_code=400,
+                                detail="Já existe uma solicitação com esse CPF.")
+
     obra_texto = " ; ".join(dados.obras)
     colaborador = salvar(dados, obra_texto, int(usuario_id), db)
 
