@@ -37,6 +37,8 @@ class SolicitacaoObra(Base):
     motivo = Column(Text, nullable=True)
     solicitante_id = Column(Integer, ForeignKey("usuario.id"))
     criado_em = Column(DateTime, default=datetime.datetime.now)
+    apagada = Column(Boolean, default=False)
+    motivo_exclusao = Column(Text, nullable=True)
 
     pessoas = relationship("PessoaDaObra", back_populates="solicitacao",
                            cascade="all, delete-orphan")

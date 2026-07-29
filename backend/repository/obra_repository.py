@@ -79,6 +79,7 @@ def buscar_por_id(solicitacao_id, db):
 def listar_todas(db):
     resultados = (db.query(SolicitacaoObra, Usuario.nome)
                   .outerjoin(Usuario, SolicitacaoObra.solicitante_id == Usuario.id)
+                  .filter(SolicitacaoObra.apagada == False)
                   .order_by(SolicitacaoObra.criado_em.desc())
                   .all())
 
@@ -92,6 +93,7 @@ def listar_todas(db):
 def listar_do_solicitante(solicitante_id, db):
     return (db.query(SolicitacaoObra)
             .filter(SolicitacaoObra.solicitante_id == solicitante_id)
+            .filter(SolicitacaoObra.apagada == False)
             .order_by(SolicitacaoObra.criado_em.desc())
             .all())
 
@@ -204,3 +206,45 @@ def criar_colaboradores_da_obra(solicitacao, db):
         )
         db.add(col)
     db.commit()
+
+
+def apagar_obra_para_lixeira(solicitacao_id, motivo, db):
+    s = buscar_por_id(solicitacao_id, db)
+    if s is None:
+        return None
+    s.apagada = True
+    s.motivo_exclusao = motivo
+    db.commit()
+    return s
+
+
+def listar_lixeira_obras(db):
+    resultados = (db.query(SolicitacaoObra, Usuario.nome)
+                  .outerjoin(Usuario, SolicitacaoObra.solicitante_id == Usuario.id)
+                  .filter(SolicitacaoObra.apagada == True)
+                  .order_by(SolicitacaoObra.criado_em.desc())
+                  .all())
+    lista = []
+    for solicitacao, nome_do_solicitante in resultados:
+        solicitacao.solicitante_nome = nome_do_solicitante
+        lista.append(solicitacao)
+    return lista
+
+
+def restaurar_obra(solicitacao_id, db):
+    s = buscar_por_id(solicitacao_id, db)
+    if s is None:
+        return None
+    s.apagada = False
+    s.motivo_exclusao = None
+    db.commit()
+    return s
+
+
+def apagar_obra_definitivo(solicitacao_id, db):
+    s = buscar_por_id(solicitacao_id, db)
+    if s is None:
+        return None
+    db.delete(s)
+    db.commit()
+    return True

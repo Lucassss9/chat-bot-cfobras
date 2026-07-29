@@ -11,6 +11,10 @@ from repository.obra_repository import (
     salvar, buscar_por_id, listar_todas, listar_do_solicitante, atualizar_decisao,
     editar_e_reenviar,
     criar_colaboradores_da_obra,
+    apagar_obra_para_lixeira,
+    listar_lixeira_obras,
+    restaurar_obra,
+    apagar_obra_definitivo,
 )
 from repository.colaborador_repository import buscar_email_do_solicitante
 from service.email_service import avisar_recusa
@@ -27,6 +31,10 @@ class PessoaEntrada(BaseModel):
     ja_tem_acesso: bool = False
     setor: Optional[str] = None
     observacao: Optional[str] = None
+
+
+class ExclusaoObra(BaseModel):
+    motivo: str
 
 
 class ObraExtraEntrada(BaseModel):
@@ -97,6 +105,7 @@ def _para_dict(s):
         "tem_ficha": s.ficha_arquivo is not None,
         "status": s.status,
         "motivo": s.motivo,
+        "motivo_exclusao": getattr(s, "motivo_exclusao", None),
         "solicitante": getattr(s, "solicitante_nome", None),
         "pessoas": [{
             "nome": p.nome,
@@ -154,6 +163,51 @@ def solicitar(dados: ObraEntrada,
 
     return {"mensagem": "Solicitação de obra enviada. As pessoas foram para Solicitações de cadastro.",
             "id": solicitacao.id}
+
+
+@router.patch("/obra/{solicitacao_id}/apagar")
+def apagar_obra(solicitacao_id: int,
+                dados: ExclusaoObra,
+                db: Session = Depends(get_db),
+                papel: str = Depends(exigir_papel("admin"))):
+    if not dados.motivo or not dados.motivo.strip():
+        raise HTTPException(status_code=400, detail="Informe o motivo da exclusao.")
+    s = apagar_obra_para_lixeira(solicitacao_id, dados.motivo.strip(), db)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+    return _para_dict(s)
+
+
+@router.get("/obra/lixeira")
+def lixeira_obras(db: Session = Depends(get_db),
+                  papel: str = Depends(exigir_papel("admin"))):
+    itens = listar_lixeira_obras(db)
+    saida = []
+    for s in itens:
+        d = _para_dict(s)
+        d["solicitante"] = getattr(s, "solicitante_nome", None)
+        saida.append(d)
+    return saida
+
+
+@router.patch("/obra/{solicitacao_id}/restaurar")
+def restaurar_obra_rota(solicitacao_id: int,
+                        db: Session = Depends(get_db),
+                        papel: str = Depends(exigir_papel("admin"))):
+    s = restaurar_obra(solicitacao_id, db)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+    return _para_dict(s)
+
+
+@router.delete("/obra/{solicitacao_id}/definitivo")
+def definitivo_obra(solicitacao_id: int,
+                    db: Session = Depends(get_db),
+                    papel: str = Depends(exigir_papel("admin"))):
+    ok = apagar_obra_definitivo(solicitacao_id, db)
+    if ok is None:
+        raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
+    return {"mensagem": "Apagado definitivamente."}
 
 
 @router.get("/obra/minhas")
