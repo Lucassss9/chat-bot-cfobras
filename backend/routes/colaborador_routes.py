@@ -63,6 +63,10 @@ class StatusUpdate(BaseModel):
     status: str
     erro: Optional[str] = None
 
+
+class PrioridadeUpdate(BaseModel):
+    prioridade: str
+
 class Recusa(BaseModel):
     motivo: str
 
@@ -87,6 +91,8 @@ def _para_dict(colaborador):
         "ja_tem_acesso": colaborador.ja_tem_acesso,
         "perfil": colaborador.perfil,
         "setor": colaborador.setor,
+        "prioridade": getattr(colaborador, "prioridade", "normal") or "normal",
+        "criado_em": colaborador.criado_em.isoformat() if colaborador.criado_em else None,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
         "status": colaborador.status,
@@ -278,6 +284,23 @@ def mudar_status(colaborador_id: int,
         email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
         tarefas.add_task(avisar_erro_no_robo, email_solicitante, colaborador.nome, dados.erro)
 
+    return _para_dict(colaborador)
+
+
+@router.patch("/colaborador/{colaborador_id}/prioridade")
+def mudar_prioridade(colaborador_id: int,
+                     dados: PrioridadeUpdate,
+                     db: Session = Depends(get_db),
+                     papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    valor = (dados.prioridade or "normal").strip().lower()
+    if valor not in ("normal", "urgente"):
+        raise HTTPException(status_code=400, detail="Prioridade deve ser 'normal' ou 'urgente'")
+    colaborador = buscar_por_id(colaborador_id, db)
+    if colaborador is None:
+        raise HTTPException(status_code=404, detail="Colaborador não encontrado")
+    colaborador.prioridade = valor
+    db.commit()
+    db.refresh(colaborador)
     return _para_dict(colaborador)
 
 

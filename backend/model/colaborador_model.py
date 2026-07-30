@@ -18,6 +18,7 @@ class Colaborador(Base):
     ja_tem_acesso = Column(Boolean, default=False)
     perfil = Column(String, nullable=True)
     setor = Column(String, nullable=True)
+    prioridade = Column(String, default="normal")
     cpf = Column(String, nullable=True)
 
     status = Column(String, default="pendente")
