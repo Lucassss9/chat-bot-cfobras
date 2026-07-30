@@ -3,14 +3,14 @@ from model.filial_model import Filial
 
 def listar_todas(db):
     return (db.query(Filial)
-            .order_by(Filial.estado, Filial.nome)
+            .order_by(Filial.estado, Filial.id)
             .all())
 
 
 def listar_por_estado(estado, db):
     return (db.query(Filial)
             .filter(Filial.estado == estado)
-            .order_by(Filial.nome)
+            .order_by(Filial.id)
             .all())
 
 
