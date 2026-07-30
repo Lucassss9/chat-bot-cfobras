@@ -245,6 +245,18 @@ def pendentes(db: Session = Depends(get_db),
     return fila
 
 
+@router.get("/colaborador/para-vincular")
+def para_vincular(db: Session = Depends(get_db),
+                  papel: str = Depends(exigir_papel("admin"))):
+    senha = obter_senha_padrao(db)
+    fila = []
+    for c in listar_por_status("cadastrado", db):
+        d = _para_dict(c)
+        d["senha_padrao"] = senha
+        fila.append(d)
+    return fila
+
+
 @router.patch("/colaborador/{colaborador_id}/status")
 def mudar_status(colaborador_id: int,
                  dados: StatusUpdate,
