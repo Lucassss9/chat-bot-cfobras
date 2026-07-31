@@ -46,6 +46,8 @@ class ObraExtraEntrada(BaseModel):
     obra_estado: Optional[str] = None
     obra_engenheiro: Optional[str] = None
     obra_descricao: Optional[str] = None
+    obra_torres: Optional[str] = None
+    obra_pavimentos: Optional[str] = None
 
 
 class ObraEntrada(BaseModel):
@@ -65,6 +67,8 @@ class ObraEntrada(BaseModel):
     obra_estado: Optional[str] = None
     obra_engenheiro: Optional[str] = None
     obra_descricao: Optional[str] = None
+    obra_torres: Optional[str] = None
+    obra_pavimentos: Optional[str] = None
     obra_cep: Optional[str] = None
     tel_adm: Optional[str] = None
     tel_engenheiro: Optional[str] = None
@@ -98,6 +102,8 @@ def _para_dict(s):
         "obra_estado": s.obra_estado,
         "obra_engenheiro": s.obra_engenheiro,
         "obra_descricao": s.obra_descricao,
+        "obra_torres": s.obra_torres,
+        "obra_pavimentos": s.obra_pavimentos,
         "obra_cep": s.obra_cep,
         "tel_adm": s.tel_adm,
         "tel_engenheiro": s.tel_engenheiro,
@@ -126,6 +132,8 @@ def _para_dict(s):
             "obra_estado": e.obra_estado,
             "obra_engenheiro": e.obra_engenheiro,
             "obra_descricao": e.obra_descricao,
+            "obra_torres": e.obra_torres,
+            "obra_pavimentos": e.obra_pavimentos,
         } for e in getattr(s, "obras_extras", [])],
     }
 

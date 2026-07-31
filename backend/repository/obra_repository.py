@@ -30,6 +30,8 @@ def salvar(dados, solicitante_id, db):
             obra_estado=dados.obra_estado,
             obra_engenheiro=dados.obra_engenheiro,
             obra_descricao=dados.obra_descricao,
+            obra_torres=getattr(dados, "obra_torres", None),
+            obra_pavimentos=getattr(dados, "obra_pavimentos", None),
             obra_cep=getattr(dados, "obra_cep", None),
             tel_adm=getattr(dados, "tel_adm", None),
             tel_engenheiro=getattr(dados, "tel_engenheiro", None),
@@ -60,6 +62,8 @@ def salvar(dados, solicitante_id, db):
                 obra_estado=extra.obra_estado,
                 obra_engenheiro=extra.obra_engenheiro,
                 obra_descricao=extra.obra_descricao,
+                obra_torres=getattr(extra, "obra_torres", None),
+                obra_pavimentos=getattr(extra, "obra_pavimentos", None),
             ))
 
         db.add(solicitacao)
@@ -174,6 +178,8 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
                 obra_estado=extra.obra_estado,
                 obra_engenheiro=extra.obra_engenheiro,
                 obra_descricao=extra.obra_descricao,
+                obra_torres=getattr(extra, "obra_torres", None),
+                obra_pavimentos=getattr(extra, "obra_pavimentos", None),
             ))
 
         s.status = "pendente"
