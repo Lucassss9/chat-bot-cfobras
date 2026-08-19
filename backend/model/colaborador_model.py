@@ -16,6 +16,7 @@ class Colaborador(Base):
     observacao = Column(Text, nullable=True)
     terceirizado = Column(Boolean, default=False)
     ja_tem_acesso = Column(Boolean, default=False)
+    desvincular_anterior = Column(Boolean, nullable=True)
     perfil = Column(String, nullable=True)
     setor = Column(String, nullable=True)
     prioridade = Column(String, default="normal")

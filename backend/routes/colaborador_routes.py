@@ -57,6 +57,7 @@ class ColaboradorCadastro(BaseModel):
     terceirizado: bool = False
     cpf: Optional[str] = None
     ja_tem_acesso: bool = False
+    desvincular_anterior: Optional[bool] = None
     setor: Optional[str] = None
 
 class StatusUpdate(BaseModel):
@@ -89,6 +90,7 @@ def _para_dict(colaborador):
         "obras": colaborador.obra.split(" ; ") if colaborador.obra else [],
         "observacao": colaborador.observacao,
         "ja_tem_acesso": colaborador.ja_tem_acesso,
+        "desvincular_anterior": colaborador.desvincular_anterior,
         "perfil": colaborador.perfil,
         "setor": colaborador.setor,
         "prioridade": getattr(colaborador, "prioridade", "normal") or "normal",
@@ -115,6 +117,10 @@ def cadastrar(dados: ColaboradorCadastro,
 
     if not dados.obras:
         raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
+
+    if dados.ja_tem_acesso and dados.desvincular_anterior is None:
+        raise HTTPException(status_code=400,
+                            detail="Diga se e para desvincular da filial anterior ou manter o vinculo.")
 
     if not dados.ja_tem_acesso:
         if not dados.funcao:
@@ -174,6 +180,10 @@ def editar(colaborador_id: int,
         raise HTTPException(status_code=400, detail="Estado deve ser SP ou RJ")
     if not dados.obras:
         raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
+
+    if dados.ja_tem_acesso and dados.desvincular_anterior is None:
+        raise HTTPException(status_code=400,
+                            detail="Diga se e para desvincular da filial anterior ou manter o vinculo.")
 
     if not dados.ja_tem_acesso:
         if not dados.funcao:

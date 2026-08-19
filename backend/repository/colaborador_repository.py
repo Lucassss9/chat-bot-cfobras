@@ -15,6 +15,8 @@ def salvar(dados, obra_texto, solicitante_id, db):
             terceirizado=False if dados.ja_tem_acesso else dados.terceirizado,
             cpf=None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf,
             ja_tem_acesso=dados.ja_tem_acesso,
+            desvincular_anterior=(getattr(dados, "desvincular_anterior", None)
+                                  if dados.ja_tem_acesso else None),
             setor=getattr(dados, "setor", None),
             solicitante_id=solicitante_id,
         )
@@ -73,6 +75,8 @@ def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db, eh_
         colaborador.terceirizado = False if dados.ja_tem_acesso else dados.terceirizado
         colaborador.cpf = None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf
         colaborador.ja_tem_acesso = dados.ja_tem_acesso
+        colaborador.desvincular_anterior = (getattr(dados, "desvincular_anterior", None)
+                                            if dados.ja_tem_acesso else None)
         colaborador.setor = getattr(dados, "setor", None)
         colaborador.status = "pendente"
         colaborador.motivo = None

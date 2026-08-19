@@ -33,6 +33,7 @@ def salvar(dados, solicitante_id, db):
             obra_torres=getattr(dados, "obra_torres", None),
             obra_pavimentos=getattr(dados, "obra_pavimentos", None),
             obra_cep=getattr(dados, "obra_cep", None),
+            adm_nome=getattr(dados, "adm_nome", None),
             tel_adm=getattr(dados, "tel_adm", None),
             tel_engenheiro=getattr(dados, "tel_engenheiro", None),
             ficha_nome=dados.ficha_nome,
@@ -48,6 +49,8 @@ def salvar(dados, solicitante_id, db):
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
+                desvincular_anterior=(getattr(pessoa, "desvincular_anterior", None)
+                                      if pessoa.ja_tem_acesso else None),
                 setor=getattr(pessoa, "setor", None),
                 observacao=getattr(pessoa, "observacao", None),
             ))
@@ -146,6 +149,7 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
         s.obra_torres = getattr(dados, "obra_torres", None)
         s.obra_pavimentos = getattr(dados, "obra_pavimentos", None)
         s.obra_cep = getattr(dados, "obra_cep", None)
+        s.adm_nome = getattr(dados, "adm_nome", None)
         s.tel_adm = getattr(dados, "tel_adm", None)
         s.tel_engenheiro = getattr(dados, "tel_engenheiro", None)
 
@@ -165,6 +169,8 @@ def editar_e_reenviar(solicitacao_id, dados, solicitante_id, db, eh_admin=False)
                 cpf=None if pessoa.ja_tem_acesso else pessoa.cpf,
                 terceirizado=False if pessoa.ja_tem_acesso else pessoa.terceirizado,
                 ja_tem_acesso=pessoa.ja_tem_acesso,
+                desvincular_anterior=(getattr(pessoa, "desvincular_anterior", None)
+                                      if pessoa.ja_tem_acesso else None),
                 setor=getattr(pessoa, "setor", None),
                 observacao=getattr(pessoa, "observacao", None),
             ))
@@ -207,6 +213,7 @@ def criar_colaboradores_da_obra(solicitacao, db):
             observacao=obs,
             terceirizado=False if p.ja_tem_acesso else p.terceirizado,
             ja_tem_acesso=p.ja_tem_acesso,
+            desvincular_anterior=p.desvincular_anterior if p.ja_tem_acesso else None,
             cpf=None if p.ja_tem_acesso else p.cpf,
             setor=p.setor,
             status="cadastrado" if p.ja_tem_acesso else "pendente",

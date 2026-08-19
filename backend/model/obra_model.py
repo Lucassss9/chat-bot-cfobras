@@ -29,6 +29,7 @@ class SolicitacaoObra(Base):
     obra_torres = Column(Text, nullable=True)
     obra_pavimentos = Column(Text, nullable=True)
     obra_cep = Column(String, nullable=True)
+    adm_nome = Column(String, nullable=True)
     tel_adm = Column(String, nullable=True)
     tel_engenheiro = Column(String, nullable=True)
 
@@ -63,6 +64,7 @@ class PessoaDaObra(Base):
     terceirizado = Column(Boolean, default=False)
 
     ja_tem_acesso = Column(Boolean, default=False)
+    desvincular_anterior = Column(Boolean, nullable=True)
     setor = Column(String, nullable=True)
     observacao = Column(Text, nullable=True)
 

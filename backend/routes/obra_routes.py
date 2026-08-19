@@ -29,6 +29,7 @@ class PessoaEntrada(BaseModel):
     cpf: Optional[str] = None
     terceirizado: bool = False
     ja_tem_acesso: bool = False
+    desvincular_anterior: Optional[bool] = None
     setor: Optional[str] = None
     observacao: Optional[str] = None
 
@@ -70,6 +71,7 @@ class ObraEntrada(BaseModel):
     obra_torres: Optional[str] = None
     obra_pavimentos: Optional[str] = None
     obra_cep: Optional[str] = None
+    adm_nome: Optional[str] = None
     tel_adm: Optional[str] = None
     tel_engenheiro: Optional[str] = None
 
@@ -105,6 +107,7 @@ def _para_dict(s):
         "obra_torres": s.obra_torres,
         "obra_pavimentos": s.obra_pavimentos,
         "obra_cep": s.obra_cep,
+        "adm_nome": s.adm_nome,
         "tel_adm": s.tel_adm,
         "tel_engenheiro": s.tel_engenheiro,
         "ficha_nome": s.ficha_nome,
@@ -120,6 +123,7 @@ def _para_dict(s):
             "cpf": p.cpf,
             "terceirizado": p.terceirizado,
             "ja_tem_acesso": p.ja_tem_acesso,
+            "desvincular_anterior": p.desvincular_anterior,
             "setor": p.setor,
             "observacao": p.observacao,
         } for p in s.pessoas],
@@ -170,6 +174,10 @@ def solicitar(dados: ObraEntrada,
                 vistos_cpf.add(cp)
 
     for pessoa in dados.pessoas:
+        if pessoa.ja_tem_acesso and pessoa.desvincular_anterior is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{pessoa.nome} ja tem acesso — diga se e para desvincular da filial anterior ou manter.")
         if not pessoa.ja_tem_acesso and not pessoa.funcao:
             raise HTTPException(
                 status_code=400,
