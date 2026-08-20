@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from config.connection import Base
 
 PAPEIS = ["comum", "solicitante", "admin"]
@@ -15,3 +15,5 @@ class Usuario(Base):
     cargo = Column(String, nullable=True)
     papel = Column(String, nullable=False, default="comum")
     ativo = Column(Boolean, nullable=False, default=True)
+
+    senha_alterada_em = Column(DateTime(timezone=True), nullable=True)

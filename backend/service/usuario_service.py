@@ -1,6 +1,6 @@
 from repository.usuario_repository import (
-    salvar_usuario, buscar_usuario_por_email, listar_usuarios,
-    atualizar_papel, atualizar_ativo,
+    salvar_usuario, buscar_usuario_por_email, buscar_usuario_por_id, listar_usuarios,
+    atualizar_papel, atualizar_ativo, atualizar_senha,
 )
 from exception.usuario_exception import UsuarioJaExisteError, DadosInvalidoError, CredenciaisInvalidasError
 from model.usuario_model import PAPEIS
@@ -8,11 +8,11 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import os
 import bcrypt
+import secrets
 
 SECRET = os.getenv("JWT_KEY")
 ALGORITMO = os.getenv("ALGORITHM")
 
-# quem se cadastrar com este e-mail vira admin automaticamente (defina no .env / Render)
 ADMIN_EMAIL = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
 
 
@@ -59,10 +59,12 @@ def login(email, senha, db):
         raise CredenciaisInvalidasError("Este acesso está desativado. Fale com o administrador.")
 
     if bcrypt.checkpw(senha.encode("utf-8"), usuario.senha.encode("utf-8")):
+        agora = datetime.now(timezone.utc)
         dados = {
             "sub": str(usuario.id),
             "papel": usuario.papel,
-            "exp": datetime.now(timezone.utc) + timedelta(hours=8),
+            "iat": agora,
+            "exp": agora + timedelta(hours=8),
         }
         token = jwt.encode(dados, SECRET, algorithm=ALGORITMO)
         return {
@@ -96,6 +98,53 @@ def mudar_ativo(usuario_id, ativo, db):
     if usuario is None:
         return None
     return _para_dict(usuario)
+
+
+def trocar_minha_senha(usuario_id, senha_atual, senha_nova, db):
+    senha_atual = (senha_atual or "").strip()
+    senha_nova = (senha_nova or "").strip()
+
+    if not senha_atual:
+        raise DadosInvalidoError("Informe a sua senha atual.")
+
+    if not _validar_senha(senha_nova):
+        raise DadosInvalidoError("A senha nova deve ter 8 caracteres ou mais.")
+
+    if senha_atual == senha_nova:
+        raise DadosInvalidoError("A senha nova precisa ser diferente da atual.")
+
+    usuario = buscar_usuario_por_id(usuario_id, db)
+    if usuario is None:
+        return None
+
+    if not bcrypt.checkpw(senha_atual.encode("utf-8"), usuario.senha.encode("utf-8")):
+        raise CredenciaisInvalidasError("Senha atual incorreta.")
+
+    atualizar_senha(usuario_id, senha_nova, db)
+    return {"mensagem": "Senha alterada. Entre de novo com a senha nova."}
+
+
+def resetar_senha_de(usuario_id, db):
+    usuario = buscar_usuario_por_id(usuario_id, db)
+    if usuario is None:
+        return None
+
+    temporaria = _gerar_senha_temporaria()
+    atualizar_senha(usuario_id, temporaria, db)
+
+    return {
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "senha_temporaria": temporaria,
+    }
+
+
+_ALFABETO = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+
+
+def _gerar_senha_temporaria():
+    blocos = ["".join(secrets.choice(_ALFABETO) for _ in range(4)) for _ in range(3)]
+    return "-".join(blocos)
 
 
 def _para_dict(usuario):
