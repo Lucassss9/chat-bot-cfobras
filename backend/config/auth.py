@@ -26,7 +26,7 @@ def usuario_atual(token: str = Depends(pegar_token), db: Session = Depends(get_d
     return dados["sub"]
 
 
-def _conferir_sessao(dados, db):
+def _conferir_sessao(dados, db, permitir_temporaria=False):
     usuario = buscar_usuario_por_id(dados.get("sub"), db)
 
     if usuario is None or not usuario.ativo:
@@ -46,7 +46,16 @@ def _conferir_sessao(dados, db):
     if datetime.fromtimestamp(emitido_em, tz=timezone.utc) < alterada:
         raise HTTPException(status_code=401, detail="Sua senha foi alterada. Faca login novamente.")
 
+    if usuario.senha_temporaria and not permitir_temporaria:
+        raise HTTPException(status_code=403, detail="Defina uma senha nova antes de usar o sistema.")
+
     return usuario
+
+
+def usuario_trocando_senha(token: str = Depends(pegar_token), db: Session = Depends(get_db)):
+    dados = _decodificar(token)
+    _conferir_sessao(dados, db, permitir_temporaria=True)
+    return dados["sub"]
 
 
 def papel_atual(token: str = Depends(pegar_token), db: Session = Depends(get_db)):

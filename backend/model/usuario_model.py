@@ -17,3 +17,5 @@ class Usuario(Base):
     ativo = Column(Boolean, nullable=False, default=True)
 
     senha_alterada_em = Column(DateTime(timezone=True), nullable=True)
+
+    senha_temporaria = Column(Boolean, nullable=False, default=False)

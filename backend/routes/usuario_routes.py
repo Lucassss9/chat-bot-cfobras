@@ -6,7 +6,7 @@ from service.usuario_service import (
     trocar_minha_senha, resetar_senha_de,
 )
 from config.connection import get_db
-from config.auth import exigir_papel, usuario_atual
+from config.auth import exigir_papel, usuario_atual, usuario_trocando_senha
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -101,7 +101,7 @@ def alterar_ativo(usuario_id: int,
 @router.post("/usuario/trocar-senha")
 def trocar_senha(dados: TrocaDeSenha,
                  db: Session = Depends(get_db),
-                 meu_id: str = Depends(usuario_atual)):
+                 meu_id: str = Depends(usuario_trocando_senha)):
     try:
         resultado = trocar_minha_senha(int(meu_id), dados.senha_atual, dados.senha_nova, db)
     except DadosInvalidoError as e:

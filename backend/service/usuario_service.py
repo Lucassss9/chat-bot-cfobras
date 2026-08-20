@@ -73,6 +73,7 @@ def login(email, senha, db):
             "nome": usuario.nome,
             "cargo": usuario.cargo,
             "papel": usuario.papel,
+            "senha_temporaria": bool(usuario.senha_temporaria),
         }
     else:
         raise CredenciaisInvalidasError("Senha incorreta")
@@ -120,17 +121,18 @@ def trocar_minha_senha(usuario_id, senha_atual, senha_nova, db):
     if not bcrypt.checkpw(senha_atual.encode("utf-8"), usuario.senha.encode("utf-8")):
         raise CredenciaisInvalidasError("Senha atual incorreta.")
 
-    atualizar_senha(usuario_id, senha_nova, db)
+    atualizar_senha(usuario_id, senha_nova, db, temporaria=False)
     return {"mensagem": "Senha alterada. Entre de novo com a senha nova."}
 
 
 def resetar_senha_de(usuario_id, db):
+    """Admin zera a senha de alguem. A temporaria aparece uma unica vez."""
     usuario = buscar_usuario_por_id(usuario_id, db)
     if usuario is None:
         return None
 
     temporaria = _gerar_senha_temporaria()
-    atualizar_senha(usuario_id, temporaria, db)
+    atualizar_senha(usuario_id, temporaria, db, temporaria=True)
 
     return {
         "nome": usuario.nome,
@@ -155,6 +157,7 @@ def _para_dict(usuario):
         "cargo": usuario.cargo,
         "papel": usuario.papel,
         "ativo": usuario.ativo,
+        "senha_temporaria": bool(usuario.senha_temporaria),
     }
 
 
