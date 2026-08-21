@@ -8,6 +8,7 @@ from config.auth import usuario_atual, papel_atual, exigir_papel
 from config.connection import get_db
 from repository.config_repository import obter_senha_padrao
 from repository.colaborador_repository import (
+    anexar_observacao,
     salvar,
     listar_por_status,
     listar_por_dia,
@@ -63,6 +64,7 @@ class ColaboradorCadastro(BaseModel):
 class StatusUpdate(BaseModel):
     status: str
     erro: Optional[str] = None
+    observacao: Optional[str] = None
 
 
 class PrioridadeUpdate(BaseModel):
@@ -283,9 +285,17 @@ def mudar_status(colaborador_id: int,
         raise HTTPException(status_code=400,
                             detail=f"Status deve ser um de: {', '.join(STATUS_VALIDOS)}")
 
-    colaborador = atualizar_status(colaborador_id, dados.status, dados.erro, db)
+    colaborador = atualizar_status(colaborador_id, dados.status, dados.erro, db,
+                                   observacao=dados.observacao)
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
+
+    # quem NAO tinha acesso ganhou usuario novo: registra a senha usada.
+    # quem ja tinha continua com a senha dele, entao nada e escrito.
+    if dados.status in ("cadastrado", "vinculado") and not colaborador.ja_tem_acesso:
+        anexar_observacao(colaborador, f"Senha inicial: {obter_senha_padrao(db)}")
+        db.commit()
+        db.refresh(colaborador)
 
     if dados.status == "concluido":
         tarefas.add_task(avisar_cadastro_concluido, colaborador.email, colaborador.nome)

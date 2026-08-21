@@ -15,8 +15,6 @@ def salvar(dados, obra_texto, solicitante_id, db):
             terceirizado=False if dados.ja_tem_acesso else dados.terceirizado,
             cpf=None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf,
             ja_tem_acesso=dados.ja_tem_acesso,
-            desvincular_anterior=(getattr(dados, "desvincular_anterior", None)
-                                  if dados.ja_tem_acesso else None),
             setor=getattr(dados, "setor", None),
             solicitante_id=solicitante_id,
         )
@@ -75,8 +73,6 @@ def editar_e_reenviar(colaborador_id, dados, obra_texto, solicitante_id, db, eh_
         colaborador.terceirizado = False if dados.ja_tem_acesso else dados.terceirizado
         colaborador.cpf = None if (dados.ja_tem_acesso or dados.terceirizado) else dados.cpf
         colaborador.ja_tem_acesso = dados.ja_tem_acesso
-        colaborador.desvincular_anterior = (getattr(dados, "desvincular_anterior", None)
-                                            if dados.ja_tem_acesso else None)
         colaborador.setor = getattr(dados, "setor", None)
         colaborador.status = "pendente"
         colaborador.motivo = None
@@ -128,13 +124,26 @@ def buscar_email_do_solicitante(solicitante_id, db):
     return usuario.email if usuario else None
 
 
-def atualizar_status(colaborador_id, status, erro, db):
+def anexar_observacao(colaborador, texto):
+    """Junta um recado na observacao SEM apagar o que o solicitante escreveu.
+    Nao repete se ja estiver la."""
+    texto = (texto or "").strip()
+    if not texto:
+        return
+    atual = (colaborador.observacao or "").strip()
+    if texto in atual:
+        return
+    colaborador.observacao = (atual + " · " + texto) if atual else texto
+
+
+def atualizar_status(colaborador_id, status, erro, db, observacao=None):
     try:
         colaborador = buscar_por_id(colaborador_id, db)
         if colaborador is None:
             return None
         colaborador.status = status
         colaborador.erro = erro
+        anexar_observacao(colaborador, observacao)
         db.commit()
         db.refresh(colaborador)
         return colaborador
