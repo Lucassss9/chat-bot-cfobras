@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import base64
 from typing import List, Optional
 
@@ -112,6 +113,7 @@ def _para_dict(s):
         "obra_pavimentos": s.obra_pavimentos,
         "obra_cep": s.obra_cep,
         "prioridade": getattr(s, "prioridade", "normal") or "normal",
+        "cobrado_em": s.cobrado_em.isoformat() if s.cobrado_em else None,
         "adm_nome": s.adm_nome,
         "tel_adm": s.tel_adm,
         "tel_engenheiro": s.tel_engenheiro,
@@ -378,3 +380,30 @@ def mudar_prioridade_obra(solicitacao_id: int,
     db.commit()
     db.refresh(solicitacao)
     return _para_dict(solicitacao)
+
+
+@router.patch("/obra/{item_id}/cobrar")
+def cobrar_obra(item_id: int,
+             db: Session = Depends(get_db),
+             papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    item = buscar_por_id(item_id, db)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+
+    if item.status not in ("pendente", "aprovado", "processando", "cadastrado", "erro"):
+        raise HTTPException(status_code=400,
+                            detail=f"Nao da para cobrar algo que ja esta '{item.status}'.")
+
+    agora = datetime.now()
+    if item.cobrado_em and (agora - item.cobrado_em) < timedelta(hours=24):
+        faltam = timedelta(hours=24) - (agora - item.cobrado_em)
+        horas = max(int(faltam.total_seconds() // 3600), 1)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Ja cobrado hoje. Pode cobrar de novo em {horas}h.")
+
+    item.cobrado_em = agora
+    item.prioridade = "urgente"
+    db.commit()
+    db.refresh(item)
+    return _para_dict(item)

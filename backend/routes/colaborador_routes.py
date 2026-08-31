@@ -8,7 +8,6 @@ from config.auth import usuario_atual, papel_atual, exigir_papel
 from config.connection import get_db
 from repository.config_repository import obter_senha_padrao
 from repository.colaborador_repository import (
-    anexar_observacao,
     salvar,
     listar_por_status,
     listar_por_dia,
@@ -30,8 +29,6 @@ from service.email_service import (
     avisar_recusa,
     avisar_cadastro_concluido,
     avisar_erro_no_robo,
-    avisar_colaborador_aprovado,
-    avisar_colaborador_vinculado,
 )
 
 router = APIRouter()
@@ -60,13 +57,11 @@ class ColaboradorCadastro(BaseModel):
     terceirizado: bool = False
     cpf: Optional[str] = None
     ja_tem_acesso: bool = False
-    desvincular_anterior: Optional[bool] = None
     setor: Optional[str] = None
 
 class StatusUpdate(BaseModel):
     status: str
     erro: Optional[str] = None
-    observacao: Optional[str] = None
 
 
 class PrioridadeUpdate(BaseModel):
@@ -94,10 +89,10 @@ def _para_dict(colaborador):
         "obras": colaborador.obra.split(" ; ") if colaborador.obra else [],
         "observacao": colaborador.observacao,
         "ja_tem_acesso": colaborador.ja_tem_acesso,
-        "desvincular_anterior": colaborador.desvincular_anterior,
         "perfil": colaborador.perfil,
         "setor": colaborador.setor,
         "prioridade": getattr(colaborador, "prioridade", "normal") or "normal",
+        "cobrado_em": colaborador.cobrado_em.isoformat() if colaborador.cobrado_em else None,
         "criado_em": colaborador.criado_em.isoformat() if colaborador.criado_em else None,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
@@ -121,10 +116,6 @@ def cadastrar(dados: ColaboradorCadastro,
 
     if not dados.obras:
         raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
-
-    if dados.ja_tem_acesso and dados.desvincular_anterior is None:
-        raise HTTPException(status_code=400,
-                            detail="Diga se e para desvincular da filial anterior ou manter o vinculo.")
 
     if not dados.ja_tem_acesso:
         if not dados.funcao:
@@ -185,10 +176,6 @@ def editar(colaborador_id: int,
     if not dados.obras:
         raise HTTPException(status_code=400, detail="Escolha ao menos uma obra.")
 
-    if dados.ja_tem_acesso and dados.desvincular_anterior is None:
-        raise HTTPException(status_code=400,
-                            detail="Diga se e para desvincular da filial anterior ou manter o vinculo.")
-
     if not dados.ja_tem_acesso:
         if not dados.funcao:
             raise HTTPException(status_code=400, detail="Informe a função.")
@@ -211,7 +198,6 @@ def editar(colaborador_id: int,
 @router.patch("/colaborador/{colaborador_id}/aprovar")
 def aprovar(colaborador_id: int,
             dados: Aprovacao,
-            tarefas: BackgroundTasks,
             db: Session = Depends(get_db),
             papel: str = Depends(exigir_papel("admin"))):
     if dados.perfil not in PERFIS:
@@ -228,12 +214,7 @@ def aprovar(colaborador_id: int,
 
     colaborador.perfil = dados.perfil
     db.commit()
-    colaborador = atualizar_decisao(colaborador_id, "aprovado", None, db)
-
-    email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
-    tarefas.add_task(avisar_colaborador_aprovado, email_solicitante, colaborador.nome)
-
-    return _para_dict(colaborador)
+    return _para_dict(atualizar_decisao(colaborador_id, "aprovado", None, db))
 
 @router.patch("/colaborador/{colaborador_id}/recusar")
 def recusar(colaborador_id: int,
@@ -293,26 +274,12 @@ def mudar_status(colaborador_id: int,
         raise HTTPException(status_code=400,
                             detail=f"Status deve ser um de: {', '.join(STATUS_VALIDOS)}")
 
-    colaborador = atualizar_status(colaborador_id, dados.status, dados.erro, db,
-                                   observacao=dados.observacao)
+    colaborador = atualizar_status(colaborador_id, dados.status, dados.erro, db)
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
-    # quem NAO tinha acesso ganhou usuario novo: registra a senha usada.
-    # quem ja tinha continua com a senha dele, entao nada e escrito.
-    if dados.status in ("cadastrado", "vinculado") and not colaborador.ja_tem_acesso:
-        anexar_observacao(colaborador, f"Senha inicial: {obter_senha_padrao(db)}")
-        db.commit()
-        db.refresh(colaborador)
-
-    if dados.status == "vinculado":
-        if not colaborador.ja_tem_acesso:
-            tarefas.add_task(avisar_cadastro_concluido, colaborador.email,
-                             colaborador.nome, obter_senha_padrao(db))
-
-        email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
-        tarefas.add_task(avisar_colaborador_vinculado, email_solicitante, colaborador.nome,
-                         colaborador.obra, bool(colaborador.ja_tem_acesso))
+    if dados.status == "concluido":
+        tarefas.add_task(avisar_cadastro_concluido, colaborador.email, colaborador.nome)
 
     if dados.status == "erro":
         email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
@@ -458,3 +425,30 @@ def definitivo(colaborador_id: int,
     if ok is None:
         raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
     return {"mensagem": "Apagado definitivamente."}
+
+
+@router.patch("/colaborador/{item_id}/cobrar")
+def cobrar_colaborador(item_id: int,
+                   db: Session = Depends(get_db),
+                   papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    item = buscar_por_id(item_id, db)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+
+    if item.status not in ("pendente", "aprovado", "processando", "cadastrado", "erro"):
+        raise HTTPException(status_code=400,
+                            detail=f"Nao da para cobrar algo que ja esta '{item.status}'.")
+
+    agora = datetime.now()
+    if item.cobrado_em and (agora - item.cobrado_em) < timedelta(hours=24):
+        faltam = timedelta(hours=24) - (agora - item.cobrado_em)
+        horas = max(int(faltam.total_seconds() // 3600), 1)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Ja cobrado hoje. Pode cobrar de novo em {horas}h.")
+
+    item.cobrado_em = agora
+    item.prioridade = "urgente"
+    db.commit()
+    db.refresh(item)
+    return _para_dict(item)

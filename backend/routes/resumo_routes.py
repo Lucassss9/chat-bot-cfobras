@@ -1,104 +1,389 @@
 import os
-from datetime import datetime
+import requests
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
-from sqlalchemy.orm import Session
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
+NOME_REMETENTE = os.getenv("NOME_REMETENTE", "CF Obras")
 
-from config.connection import get_db
-from config.auth import exigir_papel
-from model.colaborador_model import Colaborador
-from model.obra_model import SolicitacaoObra
-from model.usuario_model import Usuario
-from repository.config_repository import obter_emails_resumo
-from service.email_service import avisar_pendentes, EMAIL_RESUMO
+URL_BREVO = "https://api.brevo.com/v3/smtp/email"
+URL_CF_OBRAS = "https://manager.cfobras.com.br"
+URL_CENTRAL = os.getenv("URL_CENTRAL", "https://central-cfobras.vercel.app")
 
-router = APIRouter()
+NAVY = "#0d3b66"
+CINZA_TEXTO = "#374151"
+CINZA_CLARO = "#6b7280"
+BORDA = "#e5e7eb"
+FUNDO = "#f5f6f8"
 
-CHAVE_RESUMO = os.getenv("CHAVE_RESUMO")
-
-
-def _destinatarios(db):
-    emails = obter_emails_resumo(db)
-    return ",".join(emails) if emails else EMAIL_RESUMO
+ASSINATURA_NOME = "Central de Ajuda"
+ASSINATURA_EMPRESA = "Controle Fácil de Obras"
 
 
-def _dias_esperando(criado_em):
-    if not criado_em:
-        return 0
-    return max((datetime.now() - criado_em).days, 0)
+def _bloco_html(paragrafos):
+    return "".join(
+        f'<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:{CINZA_TEXTO}">{p}</p>'
+        for p in paragrafos if p
+    )
 
 
-def _ordenar(itens):
-    return sorted(itens, key=lambda i: (i["prioridade"] != "urgente", -i["dias"]))
+def _caixa_html(linhas):
+    if not linhas:
+        return ""
+
+    itens = "".join(
+        f'<tr>'
+        f'<td style="padding:4px 0;font-size:13px;color:{CINZA_CLARO};white-space:nowrap">{rotulo}</td>'
+        f'<td style="padding:4px 0 4px 14px;font-size:14px;color:{NAVY};font-weight:600;'
+        f'font-family:Consolas,Monaco,monospace">{valor}</td>'
+        f'</tr>'
+        for rotulo, valor in linhas
+    )
+
+    return (
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" '
+        f'style="background:{FUNDO};border:1px solid {BORDA};border-radius:8px;margin:0 0 18px">'
+        f'<tr><td style="padding:16px 20px">'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0">{itens}</table>'
+        f'</td></tr></table>'
+    )
 
 
-def _levantar_pendencias(db):
-    nomes = {u.id: u.nome for u in db.query(Usuario).all()}
+AVISO_TESTE = (
+    '<tr><td style="background:#fef3c7;border-bottom:1px solid #fcd34d;'
+    'padding:12px 28px;font-size:13px;color:#92400e;font-weight:600">'
+    'MENSAGEM DE TESTE — enviada pelo painel de administracao. '
+    'Nenhuma solicitacao real foi criada. Ignore este e-mail.'
+    '</td></tr>'
+)
 
-    colaboradores = _ordenar([
-        {
-            "titulo": c.nome,
-            "solicitante": nomes.get(c.solicitante_id),
-            "prioridade": (c.prioridade or "normal"),
-            "dias": _dias_esperando(c.criado_em),
-        }
-        for c in db.query(Colaborador).filter(Colaborador.status == "pendente").all()
+
+def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None, teste=False):
+    return (
+        f'<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
+        f'<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+        f'<body style="margin:0;padding:0;background:{FUNDO};'
+        f'font-family:Segoe UI,Helvetica,Arial,sans-serif">'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" '
+        f'style="background:{FUNDO};padding:24px 12px">'
+        f'<tr><td align="center">'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" '
+        f'style="max-width:600px;width:100%;background:#ffffff;border:1px solid {BORDA};'
+        f'border-radius:10px;overflow:hidden">'
+        f'<tr><td style="background:{NAVY};padding:18px 28px">'
+        f'<span style="font-size:16px;font-weight:700;color:#ffffff">CF Obras</span>'
+        f'<span style="font-size:14px;color:#a9c2db"> &middot; Central de Ajuda</span>'
+        f'</td></tr>'
+        f'{AVISO_TESTE if teste else ""}'
+        f'<tr><td style="padding:28px">'
+        f'<h1 style="margin:0 0 18px;font-size:19px;line-height:1.3;color:{NAVY};'
+        f'font-weight:700">{titulo}</h1>'
+        f'{_bloco_html(paragrafos)}'
+        f'{_caixa_html(caixa)}'
+        f'{html_extra or ""}'
+        f'</td></tr>'
+        f'<tr><td style="padding:0 28px"><div style="border-top:1px solid {BORDA}"></div></td></tr>'
+        f'<tr><td style="padding:18px 28px 24px">'
+        f'<p style="margin:0 0 4px;font-size:14px;font-weight:600;color:{NAVY}">{ASSINATURA_NOME}</p>'
+        f'<p style="margin:0 0 12px;font-size:13px;color:{CINZA_CLARO}">{ASSINATURA_EMPRESA}</p>'
+        f'<p style="margin:0;font-size:12px;line-height:1.6;color:{CINZA_CLARO}">'
+        f'Este e-mail foi enviado automaticamente. Nao responda esta mensagem.<br>'
+        f'Para acompanhar suas solicitacoes, acesse a '
+        f'<a href="{URL_CENTRAL}" style="color:{NAVY}">Central de Ajuda</a>.'
+        f'{"<br>" + rodape_extra if rodape_extra else ""}'
+        f'</p></td></tr>'
+        f'</table></td></tr></table></body></html>'
+    )
+
+
+def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None, teste=False):
+    import re
+
+    limpos = [re.sub(r"<[^>]+>", "", p) for p in paragrafos if p]
+    partes = []
+    if teste:
+        partes += ["*** MENSAGEM DE TESTE - ignore este e-mail ***", ""]
+    partes += [titulo, "", "\n\n".join(limpos)]
+
+    if caixa:
+        partes.append("")
+        partes.extend(f"{rotulo}: {valor}" for rotulo, valor in caixa)
+
+    partes.extend([
+        "",
+        "-" * 40,
+        ASSINATURA_NOME,
+        ASSINATURA_EMPRESA,
+        "",
+        "Este e-mail foi enviado automaticamente. Nao responda esta mensagem.",
+        f"Para acompanhar suas solicitacoes, acesse: {URL_CENTRAL}",
     ])
 
-    obras = _ordenar([
-        {
-            "titulo": o.obra_nome,
-            "solicitante": nomes.get(o.solicitante_id),
-            "prioridade": (getattr(o, "prioridade", "normal") or "normal"),
-            "dias": _dias_esperando(o.criado_em),
-        }
-        for o in db.query(SolicitacaoObra)
-        .filter(SolicitacaoObra.status == "pendente")
-        .filter(SolicitacaoObra.apagada.is_(False))
-        .all()
-    ])
+    if rodape_extra:
+        partes.append(rodape_extra)
 
-    return colaboradores, obras
+    return "\n".join(partes)
 
 
-@router.get("/resumo/pendentes")
-def ver_pendentes(db: Session = Depends(get_db),
-                  papel: str = Depends(exigir_papel("admin"))):
-    colaboradores, obras = _levantar_pendencias(db)
-    return {
-        "destinatario": _destinatarios(db),
-        "colaboradores": colaboradores,
-        "obras": obras,
-        "total": len(colaboradores) + len(obras),
-    }
+def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None,
+            html_extra=None, teste=False):
+    if not destinatario:
+        print("E-mail nao enviado: destinatario vazio")
+        return False
+
+    if not BREVO_API_KEY or not EMAIL_REMETENTE:
+        print(f"Brevo nao configurado. E-mail que iria para {destinatario}: {assunto}")
+        return False
+
+    try:
+        resposta = requests.post(
+            URL_BREVO,
+            headers={
+                "api-key": BREVO_API_KEY,
+                "Content-Type": "application/json",
+                "accept": "application/json",
+            },
+            json={
+                "sender": {"name": NOME_REMETENTE, "email": EMAIL_REMETENTE},
+                "to": [{"email": e.strip()} for e in destinatario.split(",") if e.strip()],
+                "subject": (f"[TESTE] {assunto}" if teste else assunto),
+                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra,
+                                            html_extra, teste),
+                "textContent": _montar_texto(titulo, paragrafos, caixa, rodape_extra, teste),
+            },
+            timeout=20,
+        )
+
+        if resposta.status_code >= 400:
+            print(f"Brevo recusou o e-mail para {destinatario}: "
+                  f"{resposta.status_code} {resposta.text}")
+            return False
+
+        print(f"E-mail enviado para {destinatario}: {assunto}")
+        return True
+
+    except Exception as erro:
+        print(f"Erro ao enviar e-mail para {destinatario}: {erro}")
+        return False
 
 
-@router.post("/resumo/pendentes/enviar")
-def enviar_pendentes(tarefas: BackgroundTasks,
-                     db: Session = Depends(get_db),
-                     papel: str = Depends(exigir_papel("admin"))):
-    
-    colaboradores, obras = _levantar_pendencias(db)
-    destinos = _destinatarios(db)
-    tarefas.add_task(avisar_pendentes, destinos, colaboradores, obras)
-    return {"enviado_para": destinos, "total": len(colaboradores) + len(obras)}
+def avisar_recusa(destinatario, nome_colaborador, motivo, teste=False):
+    return _enviar(
+        destinatario,
+        f"Solicitacao recusada - {nome_colaborador}",
+        "Solicitacao recusada",
+        [
+            f"A solicitacao de cadastro de <b>{nome_colaborador}</b> no CF Obras foi recusada.",
+            f"<b>Motivo:</b> {motivo}",
+            "Corrija os dados e envie a solicitacao novamente pela Central de Ajuda.",
+        ],
+        teste=teste,
+    )
 
 
-@router.post("/resumo/pendentes/agendado")
-def enviar_pendentes_agendado(tarefas: BackgroundTasks,
-                              db: Session = Depends(get_db),
-                              x_chave_resumo: str = Header(default="")):
+def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial, teste=False):
+    return _enviar(
+        destinatario,
+        "Seu acesso ao CF Obras foi criado",
+        "Seu acesso foi criado",
+        [
+            f"Ola, {nome_colaborador}.",
+            "Seu acesso ao CF Obras ja esta liberado. Use os dados abaixo para entrar.",
+        ],
+        caixa=[
+            ("Endereco", URL_CF_OBRAS),
+            ("Login", destinatario),
+            ("Senha inicial", senha_inicial),
+        ],
+        rodape_extra="Troque a senha no primeiro acesso.",
+        teste=teste,
+    )
 
-    if not CHAVE_RESUMO:
-        raise HTTPException(status_code=503, detail="Envio agendado nao configurado.")
 
-    if x_chave_resumo != CHAVE_RESUMO:
-        raise HTTPException(status_code=401, detail="Chave invalida.")
+def avisar_erro_no_robo(destinatario, nome_colaborador, erro, teste=False):
+    return _enviar(
+        destinatario,
+        f"Falha no cadastro - {nome_colaborador}",
+        "Falha no cadastro",
+        [
+            f"O cadastro de <b>{nome_colaborador}</b> no CF Obras falhou.",
+            f"<b>Erro:</b> {erro}",
+            "Confira os dados na Central de Ajuda e reenvie a solicitacao.",
+        ],
+        teste=teste,
+    )
 
-    colaboradores, obras = _levantar_pendencias(db)
 
-    if not colaboradores and not obras:
-        return {"enviado": False, "motivo": "nada pendente"}
+def avisar_colaborador_aprovado(destinatario, nome_colaborador, teste=False):
+    return _enviar(
+        destinatario,
+        f"Solicitacao aprovada - {nome_colaborador}",
+        "Solicitacao aprovada",
+        [
+            f"A solicitacao de cadastro de <b>{nome_colaborador}</b> foi aprovada "
+            f"e entrou na fila do robo.",
+            "Voce recebe outro aviso assim que o cadastro estiver concluido.",
+        ],
+        teste=teste,
+    )
 
-    tarefas.add_task(avisar_pendentes, _destinatarios(db), colaboradores, obras)
-    return {"enviado": True, "total": len(colaboradores) + len(obras)}
+
+def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vinculo, teste=False):
+    acao = "vinculado" if so_vinculo else "cadastrado e vinculado"
+    fecho = ("A pessoa continua com a senha que ja usava."
+             if so_vinculo else
+             "A pessoa recebeu por e-mail o endereco, o login e a senha inicial.")
+
+    return _enviar(
+        destinatario,
+        f"Cadastro concluido - {nome_colaborador}",
+        "Cadastro concluido",
+        [f"<b>{nome_colaborador}</b> foi {acao} no CF Obras.", fecho],
+        caixa=[("Obras", obras or "-")],
+        teste=teste,
+    )
+
+
+def avisar_obra_aprovada(destinatario, nome_obra, teste=False):
+    return _enviar(
+        destinatario,
+        f"Obra aprovada - {nome_obra}",
+        "Obra aprovada",
+        [
+            f"A solicitacao da obra <b>{nome_obra}</b> foi aprovada.",
+            "As pessoas informadas entraram na fila de cadastro do robo.",
+        ],
+        teste=teste,
+    )
+
+
+def avisar_obra_concluida(destinatario, nome_obra, teste=False):
+    return _enviar(
+        destinatario,
+        f"Obra concluida - {nome_obra}",
+        "Obra concluida",
+        [
+            f"A obra <b>{nome_obra}</b> foi concluida no CF Obras.",
+            "Obra, estrutura e acessos das pessoas ja estao no sistema.",
+        ],
+        teste=teste,
+    )
+
+
+def avisar_obra_recusada(destinatario, nome_obra, motivo, teste=False):
+    return _enviar(
+        destinatario,
+        f"Obra recusada - {nome_obra}",
+        "Obra recusada",
+        [
+            f"A solicitacao da obra <b>{nome_obra}</b> foi recusada.",
+            f"<b>Motivo:</b> {motivo}",
+            "Corrija os dados e reenvie a solicitacao pela Central de Ajuda.",
+        ],
+        teste=teste,
+    )
+
+
+EMAIL_RESUMO = os.getenv("EMAIL_RESUMO", "lucas.gabriel@cury.net")
+
+
+def _linha_pendencia(item):
+    urgente = item["prioridade"] == "urgente"
+    cor = "#b42318" if urgente else CINZA_TEXTO
+    peso = "700" if urgente else "500"
+
+    dias = item["dias"]
+    espera = "hoje" if dias == 0 else ("1 dia" if dias == 1 else f"{dias} dias")
+
+    etiquetas = []
+    if urgente:
+        etiquetas.append('<span style="font-size:11px;font-weight:700;color:#b42318">URGENTE</span>')
+
+    cobrado = item.get("cobrado_dias")
+    if cobrado is not None:
+        quando = "hoje" if cobrado == 0 else f"ha {cobrado}d"
+        etiquetas.append(f'<span style="font-size:11px;font-weight:700;'
+                         f'color:#92400e">COBRADO {quando}</span>')
+
+    marca = ("<br>" + " &middot; ".join(etiquetas)) if etiquetas else ""
+
+    celula = f'padding:9px 10px;border-bottom:1px solid {BORDA}'
+
+    return (
+        f'<tr>'
+        f'<td style="{celula};font-size:14px;color:{cor};font-weight:{peso}">'
+        f'{item["titulo"]}{marca}</td>'
+        f'<td style="{celula};font-size:13px;color:{CINZA_CLARO};white-space:nowrap">'
+        f'{item["solicitante"] or "-"}</td>'
+        f'<td style="{celula};font-size:13px;color:{CINZA_CLARO};white-space:nowrap">'
+        f'{espera}</td>'
+        f'</tr>'
+    )
+
+
+def _tabela_pendencias(titulo, itens):
+    if not itens:
+        return (f'<p style="margin:0 0 18px;font-size:14px;color:{CINZA_CLARO}">'
+                f'{titulo}: nada pendente.</p>')
+
+    cabecalho = (
+        f'<tr>'
+        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
+        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Item</th>'
+        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
+        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Pediu</th>'
+        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
+        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Espera</th>'
+        f'</tr>'
+    )
+
+    return (
+        f'<p style="margin:0 0 8px;font-size:14px;font-weight:700;color:{NAVY}">'
+        f'{titulo} ({len(itens)})</p>'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" '
+        f'style="border-collapse:collapse;margin:0 0 22px">'
+        f'{cabecalho}{"".join(_linha_pendencia(i) for i in itens)}'
+        f'</table>'
+    )
+
+
+def avisar_pendentes(destinatario, grupos, teste=False):
+    espera_voce = grupos.get("esperando_voce", ([], []))
+    espera_robo = grupos.get("esperando_robo", ([], []))
+
+    total_voce = len(espera_voce[0]) + len(espera_voce[1])
+    total_robo = len(espera_robo[0]) + len(espera_robo[1])
+    total = total_voce + total_robo
+
+    todos = espera_voce[0] + espera_voce[1] + espera_robo[0] + espera_robo[1]
+    urgentes = sum(1 for i in todos if i["prioridade"] == "urgente")
+    cobrados = sum(1 for i in todos if i.get("cobrado_dias") is not None)
+
+    if total == 0:
+        corpo = ["Nao ha nada parado no momento."]
+        tabelas = ""
+    else:
+        abertura = (f"<b>{total_voce}</b> solicitacao(oes) aguardando aprovacao e "
+                    f"<b>{total_robo}</b> aguardando o robo.")
+        detalhe = []
+        if urgentes:
+            detalhe.append(f"<b>{urgentes}</b> marcada(s) como urgente")
+        if cobrados:
+            detalhe.append(f"<b>{cobrados}</b> com cobranca do solicitante")
+        corpo = [abertura] + ([" e ".join(detalhe) + "."] if detalhe else [])
+
+        tabelas = (
+            f'<p style="margin:22px 0 10px;font-size:15px;font-weight:700;color:{NAVY};'
+            f'border-left:3px solid #b42318;padding-left:10px">Aguardando aprovacao</p>'
+            + _tabela_pendencias("Cadastros de colaborador", espera_voce[0])
+            + _tabela_pendencias("Solicitacoes de obra", espera_voce[1])
+            + f'<p style="margin:22px 0 10px;font-size:15px;font-weight:700;color:{NAVY};'
+              f'border-left:3px solid #92400e;padding-left:10px">Aguardando o robo</p>'
+            + _tabela_pendencias("Cadastros de colaborador", espera_robo[0])
+            + _tabela_pendencias("Solicitacoes de obra", espera_robo[1])
+        )
+
+    assunto = (f"{total} pendencia(s) na Central de Ajuda" if total
+               else "Nenhuma pendencia")
+
+    return _enviar(destinatario, assunto, "Pendencias da Central de Ajuda", corpo,
+                   html_extra=tabelas, teste=teste)
