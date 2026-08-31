@@ -77,7 +77,7 @@ def ver_pendentes(db: Session = Depends(get_db),
 def enviar_pendentes(tarefas: BackgroundTasks,
                      db: Session = Depends(get_db),
                      papel: str = Depends(exigir_papel("admin"))):
-    """Envio manual, pelo botao do painel."""
+    
     colaboradores, obras = _levantar_pendencias(db)
     destinos = _destinatarios(db)
     tarefas.add_task(avisar_pendentes, destinos, colaboradores, obras)
