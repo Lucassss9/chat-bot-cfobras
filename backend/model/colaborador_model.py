@@ -16,10 +16,10 @@ class Colaborador(Base):
     observacao = Column(Text, nullable=True)
     terceirizado = Column(Boolean, default=False)
     ja_tem_acesso = Column(Boolean, default=False)
+    desvincular_anterior = Column(Boolean, nullable=True)
     perfil = Column(String, nullable=True)
     setor = Column(String, nullable=True)
     prioridade = Column(String, default="normal")
-    cobrado_em = Column(DateTime, nullable=True)
     cpf = Column(String, nullable=True)
 
     status = Column(String, default="pendente")

@@ -48,16 +48,7 @@ def _caixa_html(linhas):
     )
 
 
-AVISO_TESTE = (
-    '<tr><td style="background:#fef3c7;border-bottom:1px solid #fcd34d;'
-    'padding:12px 28px;font-size:13px;color:#92400e;font-weight:600">'
-    'MENSAGEM DE TESTE — enviada pelo painel de administracao. '
-    'Nenhuma solicitacao real foi criada. Ignore este e-mail.'
-    '</td></tr>'
-)
-
-
-def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None, teste=False):
+def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None):
     return (
         f'<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
@@ -73,13 +64,11 @@ def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=N
         f'<span style="font-size:16px;font-weight:700;color:#ffffff">CF Obras</span>'
         f'<span style="font-size:14px;color:#a9c2db"> &middot; Central de Ajuda</span>'
         f'</td></tr>'
-        f'{AVISO_TESTE if teste else ""}'
         f'<tr><td style="padding:28px">'
         f'<h1 style="margin:0 0 18px;font-size:19px;line-height:1.3;color:{NAVY};'
         f'font-weight:700">{titulo}</h1>'
         f'{_bloco_html(paragrafos)}'
         f'{_caixa_html(caixa)}'
-        f'{html_extra or ""}'
         f'</td></tr>'
         f'<tr><td style="padding:0 28px"><div style="border-top:1px solid {BORDA}"></div></td></tr>'
         f'<tr><td style="padding:18px 28px 24px">'
@@ -95,14 +84,11 @@ def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=N
     )
 
 
-def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None, teste=False):
+def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None):
     import re
 
     limpos = [re.sub(r"<[^>]+>", "", p) for p in paragrafos if p]
-    partes = []
-    if teste:
-        partes += ["*** MENSAGEM DE TESTE - ignore este e-mail ***", ""]
-    partes += [titulo, "", "\n\n".join(limpos)]
+    partes = [titulo, "", "\n\n".join(limpos)]
 
     if caixa:
         partes.append("")
@@ -124,8 +110,7 @@ def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None, teste=False
     return "\n".join(partes)
 
 
-def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None,
-            html_extra=None, teste=False, copias=None, copias_ocultas=None):
+def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None):
     if not destinatario:
         print("E-mail nao enviado: destinatario vazio")
         return False
@@ -144,13 +129,10 @@ def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=
             },
             json={
                 "sender": {"name": NOME_REMETENTE, "email": EMAIL_REMETENTE},
-                "to": [{"email": e.strip()} for e in destinatario.split(",") if e.strip()],
-                **({"cc": [{"email": e} for e in copias]} if copias else {}),
-                **({"bcc": [{"email": e} for e in copias_ocultas]} if copias_ocultas else {}),
-                "subject": (f"[TESTE] {assunto}" if teste else assunto),
-                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra,
-                                            html_extra, teste),
-                "textContent": _montar_texto(titulo, paragrafos, caixa, rodape_extra, teste),
+                "to": [{"email": destinatario}],
+                "subject": assunto,
+                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra),
+                "textContent": _montar_texto(titulo, paragrafos, caixa, rodape_extra),
             },
             timeout=20,
         )
@@ -168,7 +150,7 @@ def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=
         return False
 
 
-def avisar_recusa(destinatario, nome_colaborador, motivo, teste=False):
+def avisar_recusa(destinatario, nome_colaborador, motivo):
     return _enviar(
         destinatario,
         f"Solicitacao recusada - {nome_colaborador}",
@@ -178,12 +160,10 @@ def avisar_recusa(destinatario, nome_colaborador, motivo, teste=False):
             f"<b>Motivo:</b> {motivo}",
             "Corrija os dados e envie a solicitacao novamente pela Central de Ajuda.",
         ],
-        teste=teste,
     )
 
 
-def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial, teste=False,
-                              copias_ocultas=None):
+def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial):
     return _enviar(
         destinatario,
         "Seu acesso ao CF Obras foi criado",
@@ -198,12 +178,10 @@ def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial, tes
             ("Senha inicial", senha_inicial),
         ],
         rodape_extra="Troque a senha no primeiro acesso.",
-        teste=teste,
-        copias_ocultas=copias_ocultas,
     )
 
 
-def avisar_erro_no_robo(destinatario, nome_colaborador, erro, teste=False):
+def avisar_erro_no_robo(destinatario, nome_colaborador, erro):
     return _enviar(
         destinatario,
         f"Falha no cadastro - {nome_colaborador}",
@@ -213,11 +191,10 @@ def avisar_erro_no_robo(destinatario, nome_colaborador, erro, teste=False):
             f"<b>Erro:</b> {erro}",
             "Confira os dados na Central de Ajuda e reenvie a solicitacao.",
         ],
-        teste=teste,
     )
 
 
-def avisar_colaborador_aprovado(destinatario, nome_colaborador, teste=False, copias=None):
+def avisar_colaborador_aprovado(destinatario, nome_colaborador):
     return _enviar(
         destinatario,
         f"Solicitacao aprovada - {nome_colaborador}",
@@ -227,12 +204,10 @@ def avisar_colaborador_aprovado(destinatario, nome_colaborador, teste=False, cop
             f"e entrou na fila do robo.",
             "Voce recebe outro aviso assim que o cadastro estiver concluido.",
         ],
-        teste=teste,
-        copias=copias,
     )
 
 
-def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vinculo, teste=False):
+def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vinculo):
     acao = "vinculado" if so_vinculo else "cadastrado e vinculado"
     fecho = ("A pessoa continua com a senha que ja usava."
              if so_vinculo else
@@ -244,11 +219,10 @@ def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vincu
         "Cadastro concluido",
         [f"<b>{nome_colaborador}</b> foi {acao} no CF Obras.", fecho],
         caixa=[("Obras", obras or "-")],
-        teste=teste,
     )
 
 
-def avisar_obra_aprovada(destinatario, nome_obra, teste=False, copias=None):
+def avisar_obra_aprovada(destinatario, nome_obra):
     return _enviar(
         destinatario,
         f"Obra aprovada - {nome_obra}",
@@ -257,12 +231,10 @@ def avisar_obra_aprovada(destinatario, nome_obra, teste=False, copias=None):
             f"A solicitacao da obra <b>{nome_obra}</b> foi aprovada.",
             "As pessoas informadas entraram na fila de cadastro do robo.",
         ],
-        teste=teste,
-        copias=copias,
     )
 
 
-def avisar_obra_concluida(destinatario, nome_obra, teste=False):
+def avisar_obra_concluida(destinatario, nome_obra):
     return _enviar(
         destinatario,
         f"Obra concluida - {nome_obra}",
@@ -271,11 +243,10 @@ def avisar_obra_concluida(destinatario, nome_obra, teste=False):
             f"A obra <b>{nome_obra}</b> foi concluida no CF Obras.",
             "Obra, estrutura e acessos das pessoas ja estao no sistema.",
         ],
-        teste=teste,
     )
 
 
-def avisar_obra_recusada(destinatario, nome_obra, motivo, teste=False):
+def avisar_obra_recusada(destinatario, nome_obra, motivo):
     return _enviar(
         destinatario,
         f"Obra recusada - {nome_obra}",
@@ -285,111 +256,4 @@ def avisar_obra_recusada(destinatario, nome_obra, motivo, teste=False):
             f"<b>Motivo:</b> {motivo}",
             "Corrija os dados e reenvie a solicitacao pela Central de Ajuda.",
         ],
-        teste=teste,
-    )
-
-
-EMAIL_RESUMO = os.getenv("EMAIL_RESUMO", "lucas.gabriel@cury.net")
-
-
-def _linha_pendencia(item):
-    urgente = item["prioridade"] == "urgente"
-    cor = "#b42318" if urgente else CINZA_TEXTO
-    peso = "700" if urgente else "500"
-
-    dias = item["dias"]
-    espera = "hoje" if dias == 0 else ("1 dia" if dias == 1 else f"{dias} dias")
-
-    etiquetas = []
-    if urgente:
-        etiquetas.append('<span style="font-size:11px;font-weight:700;color:#b42318">URGENTE</span>')
-
-    cobrado = item.get("cobrado_dias")
-    if cobrado is not None:
-        quando = "hoje" if cobrado == 0 else f"ha {cobrado}d"
-        etiquetas.append(f'<span style="font-size:11px;font-weight:700;'
-                         f'color:#92400e">COBRADO {quando}</span>')
-
-    marca = ("<br>" + " &middot; ".join(etiquetas)) if etiquetas else ""
-
-    celula = f'padding:9px 10px;border-bottom:1px solid {BORDA}'
-
-    return (
-        f'<tr>'
-        f'<td style="{celula};font-size:14px;color:{cor};font-weight:{peso}">'
-        f'{item["titulo"]}{marca}</td>'
-        f'<td style="{celula};font-size:13px;color:{CINZA_CLARO};white-space:nowrap">'
-        f'{item["solicitante"] or "-"}</td>'
-        f'<td style="{celula};font-size:13px;color:{CINZA_CLARO};white-space:nowrap">'
-        f'{espera}</td>'
-        f'</tr>'
-    )
-
-
-def _tabela_pendencias(titulo, itens):
-    if not itens:
-        return (f'<p style="margin:0 0 18px;font-size:14px;color:{CINZA_CLARO}">'
-                f'{titulo}: nada pendente.</p>')
-
-    cabecalho = (
-        f'<tr>'
-        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
-        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Item</th>'
-        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
-        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Pediu</th>'
-        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
-        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Espera</th>'
-        f'</tr>'
-    )
-
-    return (
-        f'<p style="margin:0 0 8px;font-size:14px;font-weight:700;color:{NAVY}">'
-        f'{titulo} ({len(itens)})</p>'
-        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" '
-        f'style="border-collapse:collapse;margin:0 0 22px">'
-        f'{cabecalho}{"".join(_linha_pendencia(i) for i in itens)}'
-        f'</table>'
-    )
-
-
-def avisar_pendentes(destinatario, grupos, teste=False):
-    espera_voce = grupos.get("esperando_voce", ([], []))
-    espera_robo = grupos.get("esperando_robo", ([], []))
-
-    total_voce = len(espera_voce[0]) + len(espera_voce[1])
-    total_robo = len(espera_robo[0]) + len(espera_robo[1])
-    total = total_voce + total_robo
-
-    todos = espera_voce[0] + espera_voce[1] + espera_robo[0] + espera_robo[1]
-    urgentes = sum(1 for i in todos if i["prioridade"] == "urgente")
-    cobrados = sum(1 for i in todos if i.get("cobrado_dias") is not None)
-
-    if total == 0:
-        corpo = ["Nao ha nada parado no momento."]
-        tabelas = ""
-    else:
-        abertura = (f"<b>{total_voce}</b> solicitacao(oes) aguardando aprovacao e "
-                    f"<b>{total_robo}</b> aguardando o robo.")
-        detalhe = []
-        if urgentes:
-            detalhe.append(f"<b>{urgentes}</b> marcada(s) como urgente")
-        if cobrados:
-            detalhe.append(f"<b>{cobrados}</b> com cobranca do solicitante")
-        corpo = [abertura] + ([" e ".join(detalhe) + "."] if detalhe else [])
-
-        tabelas = (
-            f'<p style="margin:22px 0 10px;font-size:15px;font-weight:700;color:{NAVY};'
-            f'border-left:3px solid #b42318;padding-left:10px">Aguardando aprovacao</p>'
-            + _tabela_pendencias("Cadastros de colaborador", espera_voce[0])
-            + _tabela_pendencias("Solicitacoes de obra", espera_voce[1])
-            + f'<p style="margin:22px 0 10px;font-size:15px;font-weight:700;color:{NAVY};'
-              f'border-left:3px solid #92400e;padding-left:10px">Aguardando o robo</p>'
-            + _tabela_pendencias("Cadastros de colaborador", espera_robo[0])
-            + _tabela_pendencias("Solicitacoes de obra", espera_robo[1])
-        )
-
-    assunto = (f"{total} pendencia(s) na Central de Ajuda" if total
-               else "Nenhuma pendencia")
-
-    return _enviar(destinatario, assunto, "Pendencias da Central de Ajuda", corpo,
-                   html_extra=tabelas, teste=teste)
+    )   

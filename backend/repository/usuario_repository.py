@@ -45,14 +45,6 @@ def atualizar_papel(usuario_id, papel, db):
         raise
 
 
-def listar_emails_admins(db, excluir=None):
-    excluir = (excluir or "").strip().lower()
-    admins = db.query(Usuario).filter(Usuario.papel == "admin",
-                                      Usuario.ativo.is_(True)).all()
-    return [u.email for u in admins
-            if u.email and u.email.strip().lower() != excluir]
-
-
 def atualizar_senha(usuario_id, senha_nova, db, temporaria=False):
     try:
         usuario = buscar_usuario_por_id(usuario_id, db)

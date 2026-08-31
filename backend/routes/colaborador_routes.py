@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
@@ -7,8 +6,7 @@ from sqlalchemy.orm import Session
 
 from config.auth import usuario_atual, papel_atual, exigir_papel
 from config.connection import get_db
-from repository.config_repository import obter_senha_padrao, obter_emails_resumo
-from repository.usuario_repository import listar_emails_admins
+from repository.config_repository import obter_senha_padrao
 from repository.colaborador_repository import (
     anexar_observacao,
     salvar,
@@ -100,7 +98,6 @@ def _para_dict(colaborador):
         "perfil": colaborador.perfil,
         "setor": colaborador.setor,
         "prioridade": getattr(colaborador, "prioridade", "normal") or "normal",
-        "cobrado_em": colaborador.cobrado_em.isoformat() if colaborador.cobrado_em else None,
         "criado_em": colaborador.criado_em.isoformat() if colaborador.criado_em else None,
         "terceirizado": colaborador.terceirizado,
         "cpf": colaborador.cpf,
@@ -234,8 +231,7 @@ def aprovar(colaborador_id: int,
     colaborador = atualizar_decisao(colaborador_id, "aprovado", None, db)
 
     email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
-    tarefas.add_task(avisar_colaborador_aprovado, email_solicitante, colaborador.nome,
-                     copias=listar_emails_admins(db, excluir=email_solicitante))
+    tarefas.add_task(avisar_colaborador_aprovado, email_solicitante, colaborador.nome)
 
     return _para_dict(colaborador)
 
@@ -302,19 +298,19 @@ def mudar_status(colaborador_id: int,
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
+    # quem NAO tinha acesso ganhou usuario novo: registra a senha usada.
+    # quem ja tinha continua com a senha dele, entao nada e escrito.
     if dados.status in ("cadastrado", "vinculado") and not colaborador.ja_tem_acesso:
         anexar_observacao(colaborador, f"Senha inicial: {obter_senha_padrao(db)}")
         db.commit()
         db.refresh(colaborador)
 
     if dados.status == "vinculado":
-        email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
-
         if not colaborador.ja_tem_acesso:
             tarefas.add_task(avisar_cadastro_concluido, colaborador.email,
-                             colaborador.nome, obter_senha_padrao(db),
-                             copias_ocultas=obter_emails_resumo(db))
+                             colaborador.nome, obter_senha_padrao(db))
 
+        email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
         tarefas.add_task(avisar_colaborador_vinculado, email_solicitante, colaborador.nome,
                          colaborador.obra, bool(colaborador.ja_tem_acesso))
 
@@ -462,28 +458,3 @@ def definitivo(colaborador_id: int,
     if ok is None:
         raise HTTPException(status_code=404, detail="Solicitacao nao encontrada")
     return {"mensagem": "Apagado definitivamente."}
-
-
-@router.patch("/colaborador/{colaborador_id}/cobrar")
-def cobrar_colaborador(colaborador_id: int,
-                       db: Session = Depends(get_db),
-                       papel: str = Depends(exigir_papel("solicitante", "admin"))):
-    colaborador = buscar_por_id(colaborador_id, db)
-    if colaborador is None:
-        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
-
-    if colaborador.status not in ("pendente", "aprovado", "processando", "cadastrado", "erro"):
-        raise HTTPException(status_code=400,
-                            detail=f"Nao da para cobrar algo que ja esta '{colaborador.status}'.")
-
-    agora = datetime.now()
-    if colaborador.cobrado_em and (agora - colaborador.cobrado_em) < timedelta(hours=24):
-        faltam = timedelta(hours=24) - (agora - colaborador.cobrado_em)
-        horas = max(int(faltam.total_seconds() // 3600), 1)
-        raise HTTPException(status_code=429,
-                            detail=f"Ja cobrado hoje. Pode cobrar de novo em {horas}h.")
-
-    colaborador.cobrado_em = agora
-    db.commit()
-    db.refresh(colaborador)
-    return _para_dict(colaborador)
