@@ -7,6 +7,7 @@ from routes.obra_routes import router as obra_router
 from routes.config_routes import registrar_rotas_config
 from routes.filial_routes import router as filial_router
 from routes.resumo_routes import router as resumo_router
+from routes.teste_email_routes import router as teste_email_router
 
 app = FastAPI()
 
@@ -30,6 +31,7 @@ app.include_router(obra_router)
 registrar_rotas_config(app)
 app.include_router(filial_router)
 app.include_router(resumo_router)
+app.include_router(teste_email_router)
 
 @app.on_event("startup")
 def popular_filiais():

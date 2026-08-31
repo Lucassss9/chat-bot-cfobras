@@ -48,7 +48,16 @@ def _caixa_html(linhas):
     )
 
 
-def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None):
+AVISO_TESTE = (
+    '<tr><td style="background:#fef3c7;border-bottom:1px solid #fcd34d;'
+    'padding:12px 28px;font-size:13px;color:#92400e;font-weight:600">'
+    'MENSAGEM DE TESTE — enviada pelo painel de administracao. '
+    'Nenhuma solicitacao real foi criada. Ignore este e-mail.'
+    '</td></tr>'
+)
+
+
+def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None, teste=False):
     return (
         f'<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
@@ -64,6 +73,7 @@ def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=N
         f'<span style="font-size:16px;font-weight:700;color:#ffffff">CF Obras</span>'
         f'<span style="font-size:14px;color:#a9c2db"> &middot; Central de Ajuda</span>'
         f'</td></tr>'
+        f'{AVISO_TESTE if teste else ""}'
         f'<tr><td style="padding:28px">'
         f'<h1 style="margin:0 0 18px;font-size:19px;line-height:1.3;color:{NAVY};'
         f'font-weight:700">{titulo}</h1>'
@@ -85,11 +95,14 @@ def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=N
     )
 
 
-def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None):
+def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None, teste=False):
     import re
 
     limpos = [re.sub(r"<[^>]+>", "", p) for p in paragrafos if p]
-    partes = [titulo, "", "\n\n".join(limpos)]
+    partes = []
+    if teste:
+        partes += ["*** MENSAGEM DE TESTE - ignore este e-mail ***", ""]
+    partes += [titulo, "", "\n\n".join(limpos)]
 
     if caixa:
         partes.append("")
@@ -111,7 +124,8 @@ def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None):
     return "\n".join(partes)
 
 
-def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None):
+def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None,
+            html_extra=None, teste=False):
     if not destinatario:
         print("E-mail nao enviado: destinatario vazio")
         return False
@@ -131,9 +145,10 @@ def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=
             json={
                 "sender": {"name": NOME_REMETENTE, "email": EMAIL_REMETENTE},
                 "to": [{"email": e.strip()} for e in destinatario.split(",") if e.strip()],
-                "subject": assunto,
-                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra, html_extra),
-                "textContent": _montar_texto(titulo, paragrafos, caixa, rodape_extra),
+                "subject": (f"[TESTE] {assunto}" if teste else assunto),
+                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra,
+                                            html_extra, teste),
+                "textContent": _montar_texto(titulo, paragrafos, caixa, rodape_extra, teste),
             },
             timeout=20,
         )
@@ -151,7 +166,7 @@ def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=
         return False
 
 
-def avisar_recusa(destinatario, nome_colaborador, motivo):
+def avisar_recusa(destinatario, nome_colaborador, motivo, teste=False):
     return _enviar(
         destinatario,
         f"Solicitacao recusada - {nome_colaborador}",
@@ -161,10 +176,11 @@ def avisar_recusa(destinatario, nome_colaborador, motivo):
             f"<b>Motivo:</b> {motivo}",
             "Corrija os dados e envie a solicitacao novamente pela Central de Ajuda.",
         ],
+        teste=teste,
     )
 
 
-def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial):
+def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial, teste=False):
     return _enviar(
         destinatario,
         "Seu acesso ao CF Obras foi criado",
@@ -179,10 +195,11 @@ def avisar_cadastro_concluido(destinatario, nome_colaborador, senha_inicial):
             ("Senha inicial", senha_inicial),
         ],
         rodape_extra="Troque a senha no primeiro acesso.",
+        teste=teste,
     )
 
 
-def avisar_erro_no_robo(destinatario, nome_colaborador, erro):
+def avisar_erro_no_robo(destinatario, nome_colaborador, erro, teste=False):
     return _enviar(
         destinatario,
         f"Falha no cadastro - {nome_colaborador}",
@@ -192,10 +209,11 @@ def avisar_erro_no_robo(destinatario, nome_colaborador, erro):
             f"<b>Erro:</b> {erro}",
             "Confira os dados na Central de Ajuda e reenvie a solicitacao.",
         ],
+        teste=teste,
     )
 
 
-def avisar_colaborador_aprovado(destinatario, nome_colaborador):
+def avisar_colaborador_aprovado(destinatario, nome_colaborador, teste=False):
     return _enviar(
         destinatario,
         f"Solicitacao aprovada - {nome_colaborador}",
@@ -205,10 +223,11 @@ def avisar_colaborador_aprovado(destinatario, nome_colaborador):
             f"e entrou na fila do robo.",
             "Voce recebe outro aviso assim que o cadastro estiver concluido.",
         ],
+        teste=teste,
     )
 
 
-def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vinculo):
+def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vinculo, teste=False):
     acao = "vinculado" if so_vinculo else "cadastrado e vinculado"
     fecho = ("A pessoa continua com a senha que ja usava."
              if so_vinculo else
@@ -220,10 +239,11 @@ def avisar_colaborador_vinculado(destinatario, nome_colaborador, obras, so_vincu
         "Cadastro concluido",
         [f"<b>{nome_colaborador}</b> foi {acao} no CF Obras.", fecho],
         caixa=[("Obras", obras or "-")],
+        teste=teste,
     )
 
 
-def avisar_obra_aprovada(destinatario, nome_obra):
+def avisar_obra_aprovada(destinatario, nome_obra, teste=False):
     return _enviar(
         destinatario,
         f"Obra aprovada - {nome_obra}",
@@ -232,10 +252,11 @@ def avisar_obra_aprovada(destinatario, nome_obra):
             f"A solicitacao da obra <b>{nome_obra}</b> foi aprovada.",
             "As pessoas informadas entraram na fila de cadastro do robo.",
         ],
+        teste=teste,
     )
 
 
-def avisar_obra_concluida(destinatario, nome_obra):
+def avisar_obra_concluida(destinatario, nome_obra, teste=False):
     return _enviar(
         destinatario,
         f"Obra concluida - {nome_obra}",
@@ -244,10 +265,11 @@ def avisar_obra_concluida(destinatario, nome_obra):
             f"A obra <b>{nome_obra}</b> foi concluida no CF Obras.",
             "Obra, estrutura e acessos das pessoas ja estao no sistema.",
         ],
+        teste=teste,
     )
 
 
-def avisar_obra_recusada(destinatario, nome_obra, motivo):
+def avisar_obra_recusada(destinatario, nome_obra, motivo, teste=False):
     return _enviar(
         destinatario,
         f"Obra recusada - {nome_obra}",
@@ -257,6 +279,7 @@ def avisar_obra_recusada(destinatario, nome_obra, motivo):
             f"<b>Motivo:</b> {motivo}",
             "Corrija os dados e reenvie a solicitacao pela Central de Ajuda.",
         ],
+        teste=teste,
     )
 
 
@@ -316,7 +339,7 @@ def _tabela_pendencias(titulo, itens):
     )
 
 
-def avisar_pendentes(destinatario, colaboradores, obras):
+def avisar_pendentes(destinatario, colaboradores, obras, teste=False):
     total = len(colaboradores) + len(obras)
 
     if total == 0:
@@ -335,4 +358,4 @@ def avisar_pendentes(destinatario, colaboradores, obras):
                else "Nenhuma solicitacao em aberto")
 
     return _enviar(destinatario, assunto, "Solicitacoes em aberto", corpo,
-                   html_extra=tabelas)
+                   html_extra=tabelas, teste=teste)

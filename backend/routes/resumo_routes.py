@@ -9,11 +9,17 @@ from config.auth import exigir_papel
 from model.colaborador_model import Colaborador
 from model.obra_model import SolicitacaoObra
 from model.usuario_model import Usuario
+from repository.config_repository import obter_emails_resumo
 from service.email_service import avisar_pendentes, EMAIL_RESUMO
 
 router = APIRouter()
 
 CHAVE_RESUMO = os.getenv("CHAVE_RESUMO")
+
+
+def _destinatarios(db):
+    emails = obter_emails_resumo(db)
+    return ",".join(emails) if emails else EMAIL_RESUMO
 
 
 def _dias_esperando(criado_em):
@@ -60,7 +66,7 @@ def ver_pendentes(db: Session = Depends(get_db),
                   papel: str = Depends(exigir_papel("admin"))):
     colaboradores, obras = _levantar_pendencias(db)
     return {
-        "destinatario": EMAIL_RESUMO,
+        "destinatario": _destinatarios(db),
         "colaboradores": colaboradores,
         "obras": obras,
         "total": len(colaboradores) + len(obras),
@@ -71,9 +77,11 @@ def ver_pendentes(db: Session = Depends(get_db),
 def enviar_pendentes(tarefas: BackgroundTasks,
                      db: Session = Depends(get_db),
                      papel: str = Depends(exigir_papel("admin"))):
+    """Envio manual, pelo botao do painel."""
     colaboradores, obras = _levantar_pendencias(db)
-    tarefas.add_task(avisar_pendentes, EMAIL_RESUMO, colaboradores, obras)
-    return {"enviado_para": EMAIL_RESUMO, "total": len(colaboradores) + len(obras)}
+    destinos = _destinatarios(db)
+    tarefas.add_task(avisar_pendentes, destinos, colaboradores, obras)
+    return {"enviado_para": destinos, "total": len(colaboradores) + len(obras)}
 
 
 @router.post("/resumo/pendentes/agendado")
@@ -92,5 +100,5 @@ def enviar_pendentes_agendado(tarefas: BackgroundTasks,
     if not colaboradores and not obras:
         return {"enviado": False, "motivo": "nada pendente"}
 
-    tarefas.add_task(avisar_pendentes, EMAIL_RESUMO, colaboradores, obras)
+    tarefas.add_task(avisar_pendentes, _destinatarios(db), colaboradores, obras)
     return {"enviado": True, "total": len(colaboradores) + len(obras)}
