@@ -17,7 +17,11 @@ from repository.obra_repository import (
     apagar_obra_definitivo,
 )
 from repository.colaborador_repository import buscar_email_do_solicitante, existe_email, existe_cpf
-from service.email_service import avisar_recusa
+from service.email_service import (
+    avisar_obra_aprovada,
+    avisar_obra_concluida,
+    avisar_obra_recusada,
+)
 
 router = APIRouter()
 
@@ -295,6 +299,7 @@ def editar_obra(solicitacao_id: int,
 
 @router.patch("/obra/{solicitacao_id}/aprovar")
 def aprovar(solicitacao_id: int,
+            tarefas: BackgroundTasks,
             db: Session = Depends(get_db),
             papel: str = Depends(exigir_papel("admin"))):
     solicitacao = buscar_por_id(solicitacao_id, db)
@@ -303,18 +308,29 @@ def aprovar(solicitacao_id: int,
     if solicitacao.status != "pendente":
         raise HTTPException(status_code=400, detail=f"Já está '{solicitacao.status}'.")
 
-    return _para_dict(atualizar_decisao(solicitacao_id, "aprovado", None, db))
+    solicitacao = atualizar_decisao(solicitacao_id, "aprovado", None, db)
+
+    email_solicitante = buscar_email_do_solicitante(solicitacao.solicitante_id, db)
+    tarefas.add_task(avisar_obra_aprovada, email_solicitante, solicitacao.obra_nome)
+
+    return _para_dict(solicitacao)
 
 
 @router.patch("/obra/{solicitacao_id}/concluir")
 def concluir(solicitacao_id: int,
+             tarefas: BackgroundTasks,
              db: Session = Depends(get_db),
              papel: str = Depends(exigir_papel("admin"))):
     solicitacao = buscar_por_id(solicitacao_id, db)
     if solicitacao is None:
         raise HTTPException(status_code=404, detail="Solicitação não encontrada")
 
-    return _para_dict(atualizar_decisao(solicitacao_id, "concluido", None, db))
+    solicitacao = atualizar_decisao(solicitacao_id, "concluido", None, db)
+
+    email_solicitante = buscar_email_do_solicitante(solicitacao.solicitante_id, db)
+    tarefas.add_task(avisar_obra_concluida, email_solicitante, solicitacao.obra_nome)
+
+    return _para_dict(solicitacao)
 
 
 @router.patch("/obra/{solicitacao_id}/recusar")
@@ -335,7 +351,7 @@ def recusar(solicitacao_id: int,
     solicitacao = atualizar_decisao(solicitacao_id, "recusado", dados.motivo.strip(), db)
 
     email_solicitante = buscar_email_do_solicitante(solicitacao.solicitante_id, db)
-    tarefas.add_task(avisar_recusa, email_solicitante,
-                     f"obra {solicitacao.obra_nome}", solicitacao.motivo)
+    tarefas.add_task(avisar_obra_recusada, email_solicitante,
+                     solicitacao.obra_nome, solicitacao.motivo)
 
     return _para_dict(solicitacao)

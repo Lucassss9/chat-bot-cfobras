@@ -30,6 +30,8 @@ from service.email_service import (
     avisar_recusa,
     avisar_cadastro_concluido,
     avisar_erro_no_robo,
+    avisar_colaborador_aprovado,
+    avisar_colaborador_vinculado,
 )
 
 router = APIRouter()
@@ -209,6 +211,7 @@ def editar(colaborador_id: int,
 @router.patch("/colaborador/{colaborador_id}/aprovar")
 def aprovar(colaborador_id: int,
             dados: Aprovacao,
+            tarefas: BackgroundTasks,
             db: Session = Depends(get_db),
             papel: str = Depends(exigir_papel("admin"))):
     if dados.perfil not in PERFIS:
@@ -225,7 +228,12 @@ def aprovar(colaborador_id: int,
 
     colaborador.perfil = dados.perfil
     db.commit()
-    return _para_dict(atualizar_decisao(colaborador_id, "aprovado", None, db))
+    colaborador = atualizar_decisao(colaborador_id, "aprovado", None, db)
+
+    email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
+    tarefas.add_task(avisar_colaborador_aprovado, email_solicitante, colaborador.nome)
+
+    return _para_dict(colaborador)
 
 @router.patch("/colaborador/{colaborador_id}/recusar")
 def recusar(colaborador_id: int,
@@ -297,8 +305,14 @@ def mudar_status(colaborador_id: int,
         db.commit()
         db.refresh(colaborador)
 
-    if dados.status == "concluido":
-        tarefas.add_task(avisar_cadastro_concluido, colaborador.email, colaborador.nome)
+    if dados.status == "vinculado":
+        if not colaborador.ja_tem_acesso:
+            tarefas.add_task(avisar_cadastro_concluido, colaborador.email,
+                             colaborador.nome, obter_senha_padrao(db))
+
+        email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
+        tarefas.add_task(avisar_colaborador_vinculado, email_solicitante, colaborador.nome,
+                         colaborador.obra, bool(colaborador.ja_tem_acesso))
 
     if dados.status == "erro":
         email_solicitante = buscar_email_do_solicitante(colaborador.solicitante_id, db)
