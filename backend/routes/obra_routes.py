@@ -111,6 +111,7 @@ def _para_dict(s):
         "obra_torres": s.obra_torres,
         "obra_pavimentos": s.obra_pavimentos,
         "obra_cep": s.obra_cep,
+        "prioridade": getattr(s, "prioridade", "normal") or "normal",
         "adm_nome": s.adm_nome,
         "tel_adm": s.tel_adm,
         "tel_engenheiro": s.tel_engenheiro,
@@ -354,4 +355,26 @@ def recusar(solicitacao_id: int,
     tarefas.add_task(avisar_obra_recusada, email_solicitante,
                      solicitacao.obra_nome, solicitacao.motivo)
 
+    return _para_dict(solicitacao)
+
+class PrioridadeObra(BaseModel):
+    prioridade: str
+
+
+@router.patch("/obra/{solicitacao_id}/prioridade")
+def mudar_prioridade_obra(solicitacao_id: int,
+                          dados: PrioridadeObra,
+                          db: Session = Depends(get_db),
+                          papel: str = Depends(exigir_papel("solicitante", "admin"))):
+    valor = (dados.prioridade or "normal").strip().lower()
+    if valor not in ("normal", "urgente"):
+        raise HTTPException(status_code=400, detail="Prioridade deve ser 'normal' ou 'urgente'")
+
+    solicitacao = buscar_por_id(solicitacao_id, db)
+    if solicitacao is None:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+
+    solicitacao.prioridade = valor
+    db.commit()
+    db.refresh(solicitacao)
     return _para_dict(solicitacao)

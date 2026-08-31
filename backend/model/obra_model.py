@@ -39,6 +39,7 @@ class SolicitacaoObra(Base):
     status = Column(String, default="pendente")
     motivo = Column(Text, nullable=True)
     solicitante_id = Column(Integer, ForeignKey("usuario.id"))
+    prioridade = Column(String, default="normal")
     criado_em = Column(DateTime, default=datetime.datetime.now)
     apagada = Column(Boolean, default=False)
     motivo_exclusao = Column(Text, nullable=True)

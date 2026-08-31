@@ -48,7 +48,7 @@ def _caixa_html(linhas):
     )
 
 
-def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None):
+def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None):
     return (
         f'<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
         f'<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
@@ -69,6 +69,7 @@ def _montar_html(titulo, paragrafos, caixa=None, rodape_extra=None):
         f'font-weight:700">{titulo}</h1>'
         f'{_bloco_html(paragrafos)}'
         f'{_caixa_html(caixa)}'
+        f'{html_extra or ""}'
         f'</td></tr>'
         f'<tr><td style="padding:0 28px"><div style="border-top:1px solid {BORDA}"></div></td></tr>'
         f'<tr><td style="padding:18px 28px 24px">'
@@ -110,7 +111,7 @@ def _montar_texto(titulo, paragrafos, caixa=None, rodape_extra=None):
     return "\n".join(partes)
 
 
-def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None):
+def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=None, html_extra=None):
     if not destinatario:
         print("E-mail nao enviado: destinatario vazio")
         return False
@@ -129,9 +130,9 @@ def _enviar(destinatario, assunto, titulo, paragrafos, caixa=None, rodape_extra=
             },
             json={
                 "sender": {"name": NOME_REMETENTE, "email": EMAIL_REMETENTE},
-                "to": [{"email": destinatario}],
+                "to": [{"email": e.strip()} for e in destinatario.split(",") if e.strip()],
                 "subject": assunto,
-                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra),
+                "htmlContent": _montar_html(titulo, paragrafos, caixa, rodape_extra, html_extra),
                 "textContent": _montar_texto(titulo, paragrafos, caixa, rodape_extra),
             },
             timeout=20,
@@ -256,4 +257,82 @@ def avisar_obra_recusada(destinatario, nome_obra, motivo):
             f"<b>Motivo:</b> {motivo}",
             "Corrija os dados e reenvie a solicitacao pela Central de Ajuda.",
         ],
-    )   
+    )
+
+
+EMAIL_RESUMO = os.getenv("EMAIL_RESUMO", "lucas.gabriel@cury.net")
+
+
+def _linha_pendencia(item):
+    urgente = item["prioridade"] == "urgente"
+    cor = "#b42318" if urgente else CINZA_TEXTO
+    peso = "700" if urgente else "500"
+
+    dias = item["dias"]
+    espera = "hoje" if dias == 0 else ("1 dia" if dias == 1 else f"{dias} dias")
+
+    marca = ""
+    if urgente:
+        marca = ('<br><span style="font-size:11px;font-weight:700;'
+                 'color:#b42318">URGENTE</span>')
+
+    celula = f'padding:9px 10px;border-bottom:1px solid {BORDA}'
+
+    return (
+        f'<tr>'
+        f'<td style="{celula};font-size:14px;color:{cor};font-weight:{peso}">'
+        f'{item["titulo"]}{marca}</td>'
+        f'<td style="{celula};font-size:13px;color:{CINZA_CLARO};white-space:nowrap">'
+        f'{item["solicitante"] or "-"}</td>'
+        f'<td style="{celula};font-size:13px;color:{CINZA_CLARO};white-space:nowrap">'
+        f'{espera}</td>'
+        f'</tr>'
+    )
+
+
+def _tabela_pendencias(titulo, itens):
+    if not itens:
+        return (f'<p style="margin:0 0 18px;font-size:14px;color:{CINZA_CLARO}">'
+                f'{titulo}: nada pendente.</p>')
+
+    cabecalho = (
+        f'<tr>'
+        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
+        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Item</th>'
+        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
+        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Pediu</th>'
+        f'<th align="left" style="padding:6px 10px;font-size:11px;letter-spacing:.04em;'
+        f'text-transform:uppercase;color:{CINZA_CLARO};border-bottom:2px solid {BORDA}">Espera</th>'
+        f'</tr>'
+    )
+
+    return (
+        f'<p style="margin:0 0 8px;font-size:14px;font-weight:700;color:{NAVY}">'
+        f'{titulo} ({len(itens)})</p>'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" '
+        f'style="border-collapse:collapse;margin:0 0 22px">'
+        f'{cabecalho}{"".join(_linha_pendencia(i) for i in itens)}'
+        f'</table>'
+    )
+
+
+def avisar_pendentes(destinatario, colaboradores, obras):
+    total = len(colaboradores) + len(obras)
+
+    if total == 0:
+        corpo = ["Nao ha solicitacoes em aberto no momento."]
+    else:
+        urgentes = sum(1 for i in colaboradores + obras if i["prioridade"] == "urgente")
+        abertura = f"Ha <b>{total}</b> solicitacao(oes) em aberto na Central de Ajuda."
+        if urgentes:
+            abertura += f" Dessas, <b>{urgentes}</b> marcada(s) como urgente pelo solicitante."
+        corpo = [abertura]
+
+    tabelas = (_tabela_pendencias("Cadastros de colaborador", colaboradores)
+               + _tabela_pendencias("Solicitacoes de obra", obras)) if total else ""
+
+    assunto = (f"{total} solicitacao(oes) em aberto" if total
+               else "Nenhuma solicitacao em aberto")
+
+    return _enviar(destinatario, assunto, "Solicitacoes em aberto", corpo,
+                   html_extra=tabelas)
