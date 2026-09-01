@@ -26,6 +26,13 @@ def _bloco_html(paragrafos):
     )
 
 
+def _valor_html(valor):
+    texto = str(valor)
+    if texto.startswith("http://") or texto.startswith("https://"):
+        return f'<a href="{texto}" style="color:{NAVY};text-decoration:underline">{texto}</a>'
+    return texto
+
+
 def _caixa_html(linhas):
     if not linhas:
         return ""
@@ -34,7 +41,7 @@ def _caixa_html(linhas):
         f'<tr>'
         f'<td style="padding:4px 0;font-size:13px;color:{CINZA_CLARO};white-space:nowrap">{rotulo}</td>'
         f'<td style="padding:4px 0 4px 14px;font-size:14px;color:{NAVY};font-weight:600;'
-        f'font-family:Consolas,Monaco,monospace">{valor}</td>'
+            f'font-family:Consolas,Monaco,monospace">{_valor_html(valor)}</td>'
         f'</tr>'
         for rotulo, valor in linhas
     )
