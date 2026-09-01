@@ -13,7 +13,7 @@ class Usuario(Base):
     senha = Column(String, nullable=False)
 
     cargo = Column(String, nullable=True)
-    papel = Column(String, nullable=False, default="comum")
+    papel = Column(String, nullable=False, default="solicitante")
     ativo = Column(Boolean, nullable=False, default=True)
 
     senha_alterada_em = Column(DateTime(timezone=True), nullable=True)

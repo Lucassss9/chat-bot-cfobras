@@ -33,8 +33,7 @@ def cadastrar_usuario(nome, email, senha, cargo, db):
     if buscar_usuario_por_email(email, db) is not None:
         raise UsuarioJaExisteError("Usuário já existe")
 
-    # todo mundo entra como "comum". Só um admin promove depois.
-    papel = "admin" if (ADMIN_EMAIL and email == ADMIN_EMAIL) else "comum"
+    papel = "admin" if (ADMIN_EMAIL and email == ADMIN_EMAIL) else "solicitante"
 
     salvar_usuario(nome, email, senha, cargo, papel, db)
     return {"mensagem": "Usuário cadastrado com sucesso"}
@@ -126,7 +125,6 @@ def trocar_minha_senha(usuario_id, senha_atual, senha_nova, db):
 
 
 def resetar_senha_de(usuario_id, db):
-    """Admin zera a senha de alguem. A temporaria aparece uma unica vez."""
     usuario = buscar_usuario_por_id(usuario_id, db)
     if usuario is None:
         return None
