@@ -120,6 +120,7 @@ def _para_dict(s):
         "motivo": s.motivo,
         "motivo_exclusao": getattr(s, "motivo_exclusao", None),
         "solicitante": getattr(s, "solicitante_nome", None),
+        "criado_em": s.criado_em.isoformat() if s.criado_em else None,
         "pessoas": [{
             "nome": p.nome,
             "email": p.email,
