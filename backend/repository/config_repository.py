@@ -21,3 +21,18 @@ def definir(chave, valor, db):
 
 def obter_senha_padrao(db):
     return obter("senha_padrao", db, SENHA_PADRAO_DEFAULT)
+
+
+def obter_emails_resumo(db):
+    bruto = obter("emails_resumo", db, "") or ""
+    return [e.strip() for e in bruto.split(",") if e.strip()]
+
+
+def definir_emails_resumo(lista, db):
+    limpos = []
+    for email in lista:
+        email = (email or "").strip().lower()
+        if email and email not in limpos:
+            limpos.append(email)
+    definir("emails_resumo", ",".join(limpos), db)
+    return limpos

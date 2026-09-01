@@ -73,3 +73,11 @@ def atualizar_ativo(usuario_id, ativo, db):
     except:
         db.rollback()
         raise
+
+
+def listar_emails_admins(db, excluir=None):
+    excluir = (excluir or "").strip().lower()
+    admins = db.query(Usuario).filter(Usuario.papel == "admin",
+                                      Usuario.ativo.is_(True)).all()
+    return [u.email for u in admins
+            if u.email and u.email.strip().lower() != excluir]
