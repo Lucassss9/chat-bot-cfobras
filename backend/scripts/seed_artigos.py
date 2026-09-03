@@ -1,4 +1,4 @@
-from config.connection import session_local
+from config.connection import session_local, engine, Base
 from model.artigo_model import Artigo
 from datetime import datetime
 
@@ -213,20 +213,28 @@ ARTIGOS = [
         "ordem": 1,
         "caminho": "Materiais > Recebimento de materiais",
         "resposta": (
-            "O conversor existe porque a unidade da nota fiscal nem sempre é a mesma unidade "
-            "do sistema. Ele diz QUANTAS UNIDADES DO SISTEMA cabem em UMA UNIDADE DA NOTA.\n\n"
-            "A pergunta que você tem que fazer é: 1 [unidade da nota] equivale a quantos "
-            "[unidade do sistema]? A resposta é o conversor.\n\n"
-            "Exemplos:\n"
-            "- Cabo: o sistema controla em metro, o fornecedor vende em rolo. Se 1 rolo tem "
-            "50 metros, o conversor é 50.\n"
-            "- Aço: o sistema controla em kg, o fornecedor vende em tonelada. 1 tonelada tem "
-            "1000 kg, então o conversor é 1000.\n"
-            "- Cimento: o sistema controla em kg, o fornecedor vende em saco. Se o saco tem "
-            "50 kg, o conversor é 50.\n\n"
-            "Se as duas unidades forem iguais, o conversor é 1.\n\n"
-            "Errar o conversor faz entrar quantidade errada no estoque — o estoque fica "
-            "inflado ou zerado sem motivo. Confira antes de concluir."
+            "O conversor traduz a unidade da nota fiscal para a unidade que o sistema usa. "
+            "Ele fica no lançamento, em Materiais > Recebimento de materiais, e aparece para "
+            "cada insumo da nota.\n\n"
+            "O NÚMERO QUE VAI NO CAMPO\n"
+            "É a resposta desta pergunta: 1 unidade da nota equivale a quantos da unidade do "
+            "sistema? Se as duas unidades forem iguais, o conversor é 1.\n\n"
+            "ALGUMAS CONVERSÕES SÃO SEMPRE IGUAIS\n"
+            "Porque são definição: 1 tonelada são 1000 kg, 1 milheiro são 1000 unidades, "
+            "1 dúzia são 12, 1 m³ são 1000 litros, 1 kg são 1000 g, 1 litro são 1000 ml. "
+            "Nesses casos o número não muda nunca.\n\n"
+            "AS OUTRAS DEPENDEM DO PRODUTO E PRECISAM SER CONFERIDAS\n"
+            "Saco, barra, rolo, caixa, galão, lata, fardo, pacote, peça: o número está na "
+            "embalagem ou na descrição do item dentro da nota. Não existe valor padrão — saco "
+            "de cimento costuma ter 50 kg, mas o de argamassa costuma ter 20, e barra de aço "
+            "vem de 6 ou de 12 metros dependendo da bitola. Confira sempre, item por item.\n\n"
+            "CONFIRA ANTES DE CONCLUIR\n"
+            "Multiplique a quantidade da nota pelo conversor. Esse é o número que vai entrar "
+            "no estoque. Se chegaram 10 rolos e o conversor é 50, entram 500 metros. Se o "
+            "resultado não fizer sentido para o que você recebeu, o conversor está errado.\n\n"
+            "Errar o conversor faz entrar quantidade errada no estoque — ele fica inflado ou "
+            "zerado sem motivo, e a obra sente depois.\n\n"
+            "A aba Ajuda tem uma calculadora que faz essa conta."
         ),
     },
     {
@@ -718,6 +726,8 @@ ARTIGOS = [
 
 
 def executar():
+    Base.metadata.create_all(bind=engine, tables=[Artigo.__table__])
+
     db = session_local()
     criados = 0
     atualizados = 0
