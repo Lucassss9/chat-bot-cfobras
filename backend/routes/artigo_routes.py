@@ -52,10 +52,19 @@ def _para_dict(a):
 @router.get("/artigo/destaques")
 def destaques(db: Session = Depends(get_db),
               usuario_id: str = Depends(usuario_atual)):
-
     return [{"id": a.id, "grupo": a.grupo, "pergunta": a.pergunta,
              "caminho": a.caminho}
             for a in listar_destaques(db)]
+
+
+@router.get("/artigo/ajuda")
+def ajuda(db: Session = Depends(get_db),
+          usuario_id: str = Depends(usuario_atual)):
+    from repository.artigo_repository import listar_ativos
+    return [{"id": a.id, "grupo": a.grupo, "pergunta": a.pergunta,
+             "caminho": a.caminho, "resposta": a.resposta,
+             "destaque": a.destaque, "ordem": a.ordem}
+            for a in listar_ativos(db)]
 
 
 @router.get("/artigo")
