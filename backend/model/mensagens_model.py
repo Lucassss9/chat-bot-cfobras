@@ -7,6 +7,7 @@ class Mensagens(Base):
 
     id = Column(Integer, primary_key=True)
     id_usuario = Column(Integer, ForeignKey('usuario.id'))
+    id_conversa = Column(Integer, ForeignKey('conversa.id'), nullable=True, index=True)
     papel = Column(Text)
     texto = Column(Text)
     data_hora = Column(DateTime, default=datetime.datetime.now)

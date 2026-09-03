@@ -3,7 +3,6 @@ from repository.pergunta_sem_resposta_repository import salvar
 from repository.mensagens_repository import salvar as salvar_mensagem, buscar_ultimas
 from service.ai_service import gerar_resposta
 
-
 def _admitiu_nao_saber(resposta):
     return (resposta or "").strip().lower().strip(".!") in ("nao sei", "não sei")
 
@@ -28,17 +27,17 @@ def _e_pergunta_de_verdade(pergunta):
     return True
 
 
-def processar_chat(pergunta, usuario_id, db):
+def processar_chat(pergunta, usuario_id, db, id_conversa=None):
     contexto = montar_contexto(db)
 
     if not contexto:
         return "O manual ainda não tem conteúdo. Avise o administrador."
 
-    historico = buscar_ultimas(usuario_id, 10, db)
+    historico = buscar_ultimas(usuario_id, 10, db, id_conversa=id_conversa)
     resposta = gerar_resposta(pergunta, contexto, historico)
 
-    salvar_mensagem("user", pergunta, usuario_id, db)
-    salvar_mensagem("assistant", resposta, usuario_id, db)
+    salvar_mensagem("user", pergunta, usuario_id, db, id_conversa=id_conversa)
+    salvar_mensagem("assistant", resposta, usuario_id, db, id_conversa=id_conversa)
 
     if _admitiu_nao_saber(resposta) and _e_pergunta_de_verdade(pergunta):
         salvar(pergunta, usuario_id, db)
