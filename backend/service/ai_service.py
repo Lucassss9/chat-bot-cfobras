@@ -38,9 +38,12 @@ def gerar_resposta(pergunta, texto_manual, historico):
                 "content": f"CONTEXTO: {texto_manual} - PERGUNTA: {pergunta}"
             }]
         )
-        chat = groq.chat.completions.create(model="llama-3.3-70b-versatile", messages=messages)
+        chat = groq.chat.completions.create(model="llama-3.3-70b-versatile",
+                                            messages=messages,
+                                            max_tokens=700)
 
         resposta = chat.choices[0].message.content
         return resposta
-    except:
+    except Exception as erro:
+        print("Erro ao gerar resposta:", type(erro).__name__, erro)
         return "Desculpe, ocorreu um erro ao gerar a resposta. Por favor, tente novamente mais tarde."
