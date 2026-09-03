@@ -4,6 +4,8 @@ from groq import Groq
 
 load_dotenv()
 
+MODELO = os.getenv("GROQ_MODELO", "openai/gpt-oss-120b")
+
 def gerar_resposta(pergunta, texto_manual, historico):
 
     groq_key = os.getenv("GROQ_API_KEY")
@@ -38,12 +40,13 @@ def gerar_resposta(pergunta, texto_manual, historico):
                 "content": f"CONTEXTO: {texto_manual} - PERGUNTA: {pergunta}"
             }]
         )
-        chat = groq.chat.completions.create(model="llama-3.3-70b-versatile",
+        chat = groq.chat.completions.create(model=MODELO,
                                             messages=messages,
                                             max_tokens=700)
 
         resposta = chat.choices[0].message.content
         return resposta
     except Exception as erro:
-        print("Erro ao gerar resposta:", type(erro).__name__, erro)
+        print(f"Erro ao gerar resposta (modelo {MODELO}):",
+              type(erro).__name__, erro)
         return "Desculpe, ocorreu um erro ao gerar a resposta. Por favor, tente novamente mais tarde."
