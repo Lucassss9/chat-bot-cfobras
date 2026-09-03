@@ -31,7 +31,7 @@ def processar_chat(pergunta, usuario_id, db, id_conversa=None):
     contexto = montar_contexto(db)
 
     if not contexto:
-        return "O manual ainda não tem conteúdo. Avise o administrador."
+        return "O manual ainda não tem conteúdo. Avise o administrador.", False
 
     historico = buscar_ultimas(usuario_id, 10, db, id_conversa=id_conversa)
     resposta = gerar_resposta(pergunta, contexto, historico)
@@ -39,7 +39,9 @@ def processar_chat(pergunta, usuario_id, db, id_conversa=None):
     salvar_mensagem("user", pergunta, usuario_id, db, id_conversa=id_conversa)
     salvar_mensagem("assistant", resposta, usuario_id, db, id_conversa=id_conversa)
 
-    if _admitiu_nao_saber(resposta) and _e_pergunta_de_verdade(pergunta):
+    escalou = _admitiu_nao_saber(resposta) and _e_pergunta_de_verdade(pergunta)
+
+    if escalou:
         salvar(pergunta, usuario_id, db)
 
-    return resposta
+    return resposta, escalou

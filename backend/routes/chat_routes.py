@@ -44,14 +44,14 @@ def registrar_rotas(app):
 
         conversas.titular_pela_primeira_pergunta(conversa, request.pergunta, db)
 
-        resposta = processar_chat(pergunta=request.pergunta,
-                                  usuario_id=usuario_id,
-                                  db=db,
-                                  id_conversa=conversa.id)
+        resposta, escalou = processar_chat(pergunta=request.pergunta,
+                                          usuario_id=usuario_id,
+                                          db=db,
+                                          id_conversa=conversa.id)
 
         conversas.marcar_uso(conversa, db)
-        return {"resposta": resposta, "id_conversa": conversa.id,
-                "titulo": conversa.titulo}
+        return {"resposta": resposta, "escalou": escalou,
+                "id_conversa": conversa.id, "titulo": conversa.titulo}
 
     @app.get("/conversa")
     def listar_conversas(db: Session = Depends(get_db),
