@@ -298,7 +298,13 @@ def mudar_status(colaborador_id: int,
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
-    if dados.erro:
+
+    if dados.erro and dados.erro.strip().lower().startswith("senha inicial"):
+        colaborador.erro = None
+        db.commit()
+        db.refresh(colaborador)
+
+    elif dados.erro:
         if dados.status == "erro":
             pass
         elif dados.status == "recusado":
