@@ -299,10 +299,12 @@ def mudar_status(colaborador_id: int,
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
     if dados.erro:
-        if dados.status == "recusado":
+        if dados.status == "erro":
+            pass
+        elif dados.status == "recusado":
             colaborador.motivo = dados.erro
             colaborador.erro = None
-        elif dados.status != "erro":
+        else:
             anexar_observacao(colaborador, dados.erro)
             colaborador.erro = None
         db.commit()
