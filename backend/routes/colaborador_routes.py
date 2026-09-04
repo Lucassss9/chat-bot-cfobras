@@ -298,8 +298,16 @@ def mudar_status(colaborador_id: int,
     if colaborador is None:
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
-    # quem NAO tinha acesso ganhou usuario novo: registra a senha usada.
-    # quem ja tinha continua com a senha dele, entao nada e escrito.
+    if dados.erro:
+        if dados.status == "recusado":
+            colaborador.motivo = dados.erro
+            colaborador.erro = None
+        elif dados.status != "erro":
+            anexar_observacao(colaborador, dados.erro)
+            colaborador.erro = None
+        db.commit()
+        db.refresh(colaborador)
+
     if dados.status in ("cadastrado", "vinculado") and not colaborador.ja_tem_acesso:
         anexar_observacao(colaborador, f"Senha inicial: {obter_senha_padrao(db)}")
         db.commit()
